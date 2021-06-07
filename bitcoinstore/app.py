@@ -4,6 +4,7 @@ from werkzeug.debug import DebuggedApplication
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from bitcoinstore.page.views import page
+from bitcoinstore.api import api
 from bitcoinstore.extensions import db
 from bitcoinstore.extensions import debug_toolbar
 from bitcoinstore.extensions import flask_static_digest
@@ -52,6 +53,7 @@ def create_app(settings_override=None):
     middleware(app)
 
     app.register_blueprint(page)
+    app.register_blueprint(api, url_prefix="/api/v1")
 
     extensions(app)
 
