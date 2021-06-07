@@ -1,4 +1,5 @@
 from flask import Blueprint
+from http import HTTPStatus
 
 from bitcoinstore.extensions import db
 from bitcoinstore.initializers import redis
@@ -10,4 +11,4 @@ api = Blueprint("api/v1", __name__)
 def up():
     redis.ping()
     db.engine.execute("SELECT 1")
-    return ""
+    return ("", HTTPStatus.OK)
