@@ -3,7 +3,8 @@ from flask import Blueprint, request, current_app
 from http import HTTPStatus
 from sqlalchemy.exc import SQLAlchemyError
 
-from bitcoinstore.extensions import db, Product
+from bitcoinstore.extensions import db
+from bitcoinstore.models import Product
 
 products = Blueprint("products", __name__)
 
