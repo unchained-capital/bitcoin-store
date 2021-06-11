@@ -16,7 +16,7 @@ class TestProductItems(ViewTestMixin):
     update_route = "api/v1.products.items.update"
 
     def test_create_without_product_id(self):
-        """ Create without product id returns 405. """
+        """ Create without product id returns 405."""
         with pytest.raises(werkzeug.routing.BuildError):
             url_for(self.create_route)
 
@@ -24,7 +24,7 @@ class TestProductItems(ViewTestMixin):
         assert response.status_code == 405
 
     def test_create_without_required_attrs(self):
-        """ Create without required item attrs returns 422. """
+        """ Create without required item attrs returns 422."""
         product = ProductFactory.create()
         response = self.client.post(
             url_for(self.create_route, product_id=product.id)
@@ -33,7 +33,7 @@ class TestProductItems(ViewTestMixin):
         assert response.status_code == 422
 
     def test_create_valid(self):
-        """ Valid create should respond with a created 201. """
+        """ Valid create should respond with a created 201."""
         product = ProductFactory.create()
         response = self.client.post(
             url_for(
@@ -55,7 +55,7 @@ class TestProductItems(ViewTestMixin):
         )
 
     def test_update_without_params(self):
-        """ No-op updating should respond with success 200. """
+        """ No-op updating should respond with success 200."""
         product = ProductFactory.create()
         product_item = ProductItemFactory.create(product=product)
         response = self.client.patch(
@@ -67,7 +67,7 @@ class TestProductItems(ViewTestMixin):
         assert response.status_code == 200
 
     def test_update_valid(self):
-        """ Updating should respond with success 200. """
+        """ Updating should respond with success 200."""
         product_item = ProductItemFactory.create()
         response = self.client.patch(
             url_for(
