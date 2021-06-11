@@ -11,7 +11,7 @@ class TestProducts(ViewTestMixin):
     update_route = "api/v1.products.update"
 
     def test_create_without_requred_params(self):
-        """ Up page should respond with a success 200. """
+        """ Create without required attrs returns 422. """
         response = self.client.post(url_for(self.create_route))
 
         assert response.status_code == 422
@@ -24,10 +24,6 @@ class TestProducts(ViewTestMixin):
                 sku="12341234",
                 name="Wooden Pencil, Yellow, #2, Pre-Sharpened, 30-pack",
                 description="",
-                color="Yellow",
-                unit_price_subunits=300,
-                shipping_weight_kg=0.1,
-                amount_in_stock=973,
             )
         )
 
@@ -40,9 +36,7 @@ class TestProducts(ViewTestMixin):
     def test_update_without_params(self):
         """ No-op updating should respond with success 200. """
         product = ProductFactory.create()
-        response = self.client.patch(
-            url_for(self.update_route, id=product.id)
-        )
+        response = self.client.patch(url_for(self.update_route, id=product.id))
 
         assert response.status_code == 200
 
@@ -58,11 +52,6 @@ class TestProducts(ViewTestMixin):
                 sku="12341234",
                 name="Pen, Black, 30-pack",
                 description="Great!",
-                color="Black",
-                unit_price_subunits=20000,
-                unit_price_currency="BTC",
-                shipping_weight_kg=0.05,
-                amount_in_stock=973,
             ),
         )
 
