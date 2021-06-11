@@ -1,5 +1,5 @@
 from decimal import Decimal
-from flask import Blueprint, current_app, request
+from flask import Blueprint, current_app, jsonify, request, url_for
 from http import HTTPStatus
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -26,7 +26,8 @@ def create():
     * shipping_weight_kg (decimal) - the shipping weight of the product in KG,
         or decimal amounts thereof.
 
-    On success, returns HTTP Created response.
+    On success, returns HTTP Created response, with the product's URL in the
+    Location response header.
     """
     args = request.args
 
@@ -48,7 +49,11 @@ def create():
         db.session.rollback()
         return (repr(e), HTTPStatus.UNPROCESSABLE_ENTITY)
 
-    return ("", HTTPStatus.CREATED)
+    return (
+        jsonify(id=product.id),
+        HTTPStatus.CREATED,
+        {"Location": url_for("api/v1.products.update", id=product.id)},
+    )
 
 
 @products.patch("/<int:id>")

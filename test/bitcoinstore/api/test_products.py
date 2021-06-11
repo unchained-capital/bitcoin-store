@@ -1,3 +1,4 @@
+import json
 from flask import url_for
 
 from lib.test import ViewTestMixin
@@ -28,11 +29,14 @@ class TestProducts(ViewTestMixin):
         )
 
         assert response.status_code == 201
+        body = json.loads(response.data)
+        assert response.headers["Location"] == url_for(
+            "api/v1.products.update", id=body["id"]
+        )
 
     def test_update_without_params(self):
         """ No-op updating should respond with success 200. """
         product = ProductFactory.create()
-        print(product.id)
         response = self.client.patch(
             url_for("api/v1.products.update", id=product.id)
         )
@@ -42,7 +46,6 @@ class TestProducts(ViewTestMixin):
     def test_update_valid(self):
         """ Updating should respond with success 200. """
         product = ProductFactory.create()
-        print(product.id)
         response = self.client.patch(
             url_for(
                 "api/v1.products.update",
