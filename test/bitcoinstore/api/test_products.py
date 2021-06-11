@@ -7,9 +7,12 @@ from test.factories import ProductFactory
 
 
 class TestProducts(ViewTestMixin):
+    create_route = "api/v1.products.create"
+    update_route = "api/v1.products.update"
+
     def test_create_without_requred_params(self):
         """ Up page should respond with a success 200. """
-        response = self.client.post(url_for("api/v1.products.create"))
+        response = self.client.post(url_for(self.create_route))
 
         assert response.status_code == 422
 
@@ -17,7 +20,7 @@ class TestProducts(ViewTestMixin):
         """ Valid create should respond with a created 201. """
         response = self.client.post(
             url_for(
-                "api/v1.products.create",
+                self.create_route,
                 sku="12341234",
                 name="Wooden Pencil, Yellow, #2, Pre-Sharpened, 30-pack",
                 description="",
@@ -31,14 +34,14 @@ class TestProducts(ViewTestMixin):
         assert response.status_code == 201
         body = json.loads(response.data)
         assert response.headers["Location"] == url_for(
-            "api/v1.products.update", id=body["id"]
+            self.update_route, id=body["id"]
         )
 
     def test_update_without_params(self):
         """ No-op updating should respond with success 200. """
         product = ProductFactory.create()
         response = self.client.patch(
-            url_for("api/v1.products.update", id=product.id)
+            url_for(self.update_route, id=product.id)
         )
 
         assert response.status_code == 200
@@ -48,7 +51,7 @@ class TestProducts(ViewTestMixin):
         product = ProductFactory.create()
         response = self.client.patch(
             url_for(
-                "api/v1.products.update",
+                self.update_route,
                 id=product.id,
             ),
             data=dict(
