@@ -3,9 +3,20 @@ from .product import Product
 
 
 class ProductItem(db.Model):
+    """Records an orderable variant or individual non-fungible item.
+
+    All product items belong to a product, which is a sort of container
+    associating related variants/items.
+    """
+
     id = db.Column(db.BigInteger, primary_key=True)
     product_id = db.Column(
         db.BigInteger, db.ForeignKey(Product.id), nullable=False
+    )
+    product = db.relationship("Product", back_populates="items")
+    reservations = db.relationship(
+        "Reservation",
+        back_populates="product_item"
     )
 
     serial_num = db.Column(db.String)

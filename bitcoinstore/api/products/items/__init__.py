@@ -6,7 +6,12 @@ from sqlalchemy.exc import SQLAlchemyError
 from bitcoinstore.extensions import db
 from bitcoinstore.models.product_item import ProductItem
 
+from .reservations import reservations
+
 items = Blueprint("items", __name__)
+items.register_blueprint(
+    reservations, url_prefix="/<int:product_item_id>/reservations"
+)
 
 
 @items.url_value_preprocessor
@@ -90,7 +95,9 @@ def update(id):
     """
     args = request.args
 
-    product_item = ProductItem.query.get_or_404(g.product_id, id)
+    product_item = ProductItem.query.filter_by(
+        product_id=g.product_id, id=id
+    ).first_or_404()
 
     if args.get("serial_num"):
         product_item.serial_num = args.get("serial_num")

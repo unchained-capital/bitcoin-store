@@ -6,7 +6,7 @@ from flask import url_for
 
 from lib.test import ViewTestMixin
 
-from bitcoinstore.extensions import db
+from bitcoinstore.models.product_item import ProductItem
 
 from test.factories import ProductFactory, ProductItemFactory
 
@@ -53,6 +53,15 @@ class TestProductItems(ViewTestMixin):
         assert response.headers["Location"] == url_for(
             self.update_route, product_id=product.id, id=body["id"]
         )
+
+        product_item = ProductItem.query.get(body["id"])
+        assert product_item.serial_num == "12341234"
+        assert product_item.description == ""
+        assert product_item.color == "Yellow"
+        assert product_item.unit_price_subunits == 300
+        assert product_item.unit_price_currency == "USD"
+        assert product_item.shipping_weight_kg == Decimal("0.1")
+        assert product_item.amount_in_stock == 973
 
     def test_update_without_params(self):
         """ No-op updating should respond with success 200."""
