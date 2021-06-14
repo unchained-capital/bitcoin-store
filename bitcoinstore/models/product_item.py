@@ -26,7 +26,9 @@ class ProductItem(db.Model):
     unit_price_currency = db.Column(db.String(3), nullable=False)
     shipping_weight_kg = db.Column(db.Numeric)
     amount_in_stock = db.Column(db.Integer, nullable=False)
+    amount_reserved = db.Column(db.Integer, nullable=False, default=0)
 
     __table_args__ = (
         db.Index("index_serial_num", "product_id", "serial_num", unique=True),
+        db.CheckConstraint("amount_in_stock >= amount_reserved"),
     )

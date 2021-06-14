@@ -33,9 +33,13 @@ def create():
     """
     args = request.args
 
-    product_item = ProductItem.query.filter_by(
-        product_id=g.product_id, id=g.product_item_id
-    ).first_or_404()
+    product_item = (
+        ProductItem.query.filter_by(
+            product_id=g.product_id, id=g.product_item_id
+        )
+        .with_for_update(nowait=True)
+        .first_or_404()
+    )
 
     # TODO: in a reasonable implementation, this endpoint would check
     # for authorization to create a reservation for the given cart.
@@ -45,7 +49,8 @@ def create():
         amount=args.get("amount", type=int, default=1),
     )
 
-    if reservation.amount > product_item.amount_in_stock:
+    new_amount_reserved = product_item.amount_reserved + reservation.amount
+    if new_amount_reserved > product_item.amount_in_stock:
         # Note, this response is a bit of a hack, probably a mis-use of http
         # response codes.
         return (
@@ -53,7 +58,9 @@ def create():
             HTTPStatus.REQUEST_ENTITY_TOO_LARGE,
         )
 
+    product_item.amount_reserved = new_amount_reserved
     try:
+        db.session.add(product_item)
         db.session.add(reservation)
         db.session.commit()
     except SQLAlchemyError as e:
@@ -83,13 +90,23 @@ def destroy(id):
 
     On success, returns HTTP OK response.
     """
+    product_item = (
+        ProductItem.query.filter_by(
+            product_id=g.product_id, id=g.product_item_id
+        )
+        .with_for_update(nowait=True)
+        .first_or_404()
+    )
+
     # TODO: in a reasonable implementation, this endpoint would check the
     # caller for authorization to destroy this reservation.
     reservation = Reservation.query.filter_by(
         product_item_id=g.product_item_id, id=id
     ).first_or_404()
 
+    product_item.amount_reserved -= reservation.amount
     try:
+        db.session.add(product_item)
         db.session.delete(reservation)
         db.session.commit()
     except SQLAlchemyError as e:

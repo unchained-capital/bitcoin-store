@@ -30,7 +30,6 @@ class TestProductItemReservations(ViewTestMixin):
                 product_item_id=product_item.id,
             )
         )
-
         assert response.status_code == 422
 
     def test_create_insufficient_available(self):
@@ -45,6 +44,30 @@ class TestProductItemReservations(ViewTestMixin):
                 product_item_id=product_item.id,
                 cart_id="Foo",
                 amount=10,
+            )
+        )
+        assert response.status_code == 413
+
+        # Small requests succed, then later fail if their attempts
+        # push past limits
+        response = self.client.post(
+            url_for(
+                self.create_route,
+                product_id=product_item.product_id,
+                product_item_id=product_item.id,
+                cart_id="Foo",
+                amount=2,
+            )
+        )
+        assert response.status_code == 201
+
+        response = self.client.post(
+            url_for(
+                self.create_route,
+                product_id=product_item.product_id,
+                product_item_id=product_item.id,
+                cart_id="Foo",
+                amount=2,
             )
         )
         assert response.status_code == 413
@@ -73,14 +96,27 @@ class TestProductItemReservations(ViewTestMixin):
 
     def test_destroy_valid(self):
         """ Destroying should respond with success 200."""
-        reservation = ProductItemReservationFactory.create()
+        product_item = ProductItemFactory.create(amount_in_stock=5, amount_reserved=5)
+        reservation = ProductItemReservationFactory.create(product_item=product_item, amount=5)
         response = self.client.delete(
             url_for(
                 self.destroy_route,
-                product_id=reservation.product_item.product_id,
-                product_item_id=reservation.product_item_id,
+                product_id=product_item.product_id,
+                product_item_id=product_item.id,
                 id=reservation.id,
             )
         )
-
         assert response.status_code == 200
+
+        # After destroy, should be able to create again
+        response = self.client.post(
+            url_for(
+                self.create_route,
+                product_id=product_item.product_id,
+                product_item_id=product_item.id,
+                cart_id="Foo",
+                amount=2,
+            )
+        )
+
+        assert response.status_code == 201
