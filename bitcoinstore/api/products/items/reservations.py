@@ -82,6 +82,38 @@ def create():
     )
 
 
+@reservations.post("/<int:id>/fulfill")
+def fulfill(id):
+    """Fulfill a reservation
+
+    Called when a reservation is shipped, removes the reserved product from the
+    the amount in stock.
+    """
+    product_item = (
+        ProductItem.query.filter_by(
+            product_id=g.product_id, id=g.product_item_id
+        )
+        .with_for_update(nowait=True)
+        .first_or_404()
+    )
+    reservation = Reservation.query.filter_by(
+        product_item_id=product_item.id, id=id
+    ).first_or_404()
+
+    product_item.amount_reserved -= reservation.amount
+    product_item.amount_in_stock -= reservation.amount
+
+    try:
+        db.session.add(product_item)
+        db.session.commit()
+    except SQLAlchemyError as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return (repr(e), HTTPStatus.UNPROCESSABLE_ENTITY)
+
+    return ("", HTTPStatus.OK)
+
+
 @reservations.delete("/<int:id>")
 def destroy(id):
     """Cancel a reservation
