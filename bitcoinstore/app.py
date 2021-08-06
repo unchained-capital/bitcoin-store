@@ -81,7 +81,7 @@ def middleware(app):
     :param app: Flask application instance
     :return: None
     """
-    # Enable the Flask interactive debugger in the brower for development.
+    # Enable the Flask interactive debugger in the browser for development.
     if app.debug:
         app.wsgi_app = DebuggedApplication(app.wsgi_app, evalex=True)
 

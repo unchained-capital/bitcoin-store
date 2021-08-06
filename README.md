@@ -1,7 +1,7 @@
 # A Backend for a Bitcoin store
 
 This project aims to eventually become a bitcoin based store api,
-including sections for inventory managment, product searches,
+including sections for inventory management, product searches,
 accepting bitcoin payments, and fulfillment.
 
 Currently, very little of this functionality is present.
@@ -26,13 +26,13 @@ of a fungible item:
   Color: Yellow
   Amount in Stock: 973
 
-Non-fungible inventory has more or less the same data descibing a
+Non-fungible inventory has more or less the same data describing a
 product, but each item of inventory is unique, and as such it has
 a serial number that is unique to its product line. Also, non-fungible
 items may have individual descriptions. An example of a non-fungible
 item:
 
-  Motorcyle, Honda CB750F
+  Motorcycle, Honda CB750F
   SKU 91919191
   Shipping Weight: 200 kg
 
@@ -40,7 +40,7 @@ item:
   SKU 91919191
   Color: Yellow
   SN: VIN1234134134
-  Notes: Stratches on the clearcoat on the fuel tank.
+  Notes: Scratches on the clear coat on the fuel tank.
   Price: $3200
 
 

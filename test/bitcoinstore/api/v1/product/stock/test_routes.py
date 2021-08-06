@@ -75,7 +75,7 @@ class TestApiV1(ViewTestMixin):
 
     def test_stock_route_get(self):
         """
-        Stock read API should return the fully popluated Stock object.
+        Stock read API should return the fully populated Stock object.
         """
         stock = product_helpers.create_product_stock(self.client)
 

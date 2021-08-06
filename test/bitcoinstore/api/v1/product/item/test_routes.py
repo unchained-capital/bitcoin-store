@@ -75,7 +75,7 @@ class TestApiV1(ViewTestMixin):
 
     def test_item_route_get(self):
         """
-        Item read API should return the fully popluated Item object.
+        Item read API should return the fully populated Item object.
         """
         data = product_helpers.create_product_item(self.client)
 

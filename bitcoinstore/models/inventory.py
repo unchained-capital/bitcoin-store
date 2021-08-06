@@ -3,17 +3,17 @@ from bitcoinstore.extensions import db
 
 
 """
-Prudcts can be bulk stock, and/or individual items.
+Products can be bulk stock, and/or individual items.
 Both stock and items are the same notional product,
 but follow different relationship restrictions.
 
 Stock is a fungible item, which can be interchanged with
-other identital items, such as when ordering a new retail item.
+other identical items, such as when ordering a new retail item.
 Any item can fullfil the order, as long as its the same SKU.
 
-Item is a non-fungible item, which is unqiue and can't be
+Item is a non-fungible item, which is unique and can't be
 interchanged with another item, such as used items.
-Only the speicific item listed for sale can fullfil the order.
+Only the specific item listed for sale can fullfil the order.
 """
 
 
