@@ -2,9 +2,11 @@ from flask import Blueprint, request, make_response, jsonify
 
 from bitcoinstore.extensions import db
 from bitcoinstore.models.inventory import Product
+from bitcoinstore.api.v1.product.stock.routes import stock
 
 
 product = Blueprint("product", __name__)
+product.register_blueprint(stock, url_prefix="/<int:product_id>/stock")
 
 
 @product.route("/", methods=["GET"])

@@ -15,3 +15,23 @@ def create_product(client):
     }
     response = client.post(url_for("api.product.create"), json=json)
     return response.json
+
+
+def create_product_stock(client):
+    """
+    Create a product stock for our test session.
+
+    :return: ProductStock json
+    """
+    product = create_product(client)
+    json = {
+        "color": "Yellow",
+        "price": 3.0,
+        "currency": "USD",
+        "quantity": 973,
+        "reserved": 0,
+    }
+    response = client.post(
+        url_for("api.product.stock.create", product_id=product["id"]), json=json
+    )
+    return response.json
