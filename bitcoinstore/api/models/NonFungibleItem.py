@@ -1,3 +1,5 @@
+from typing import Union
+from datetime import datetime, timezone
 from bitcoinstore.extensions import db
 
 
@@ -11,6 +13,7 @@ class NonFungibleItem(db.Model):
     color = db.Column(db.String)
     notes = db.Column(db.String)
     price_cents = db.Column(db.BigInteger, nullable=False, default=0)
+    reserved = db.Column(db.DateTime)
     sold = db.Column(db.Boolean, nullable=False, default=False)
     sku = db.Column(db.String(100), db.ForeignKey('non_fungible_type.sku'))
 
@@ -74,6 +77,17 @@ class NonFungibleItem(db.Model):
             self.price_cents = new_price
 
 
+    def get_reserved(self) -> Union[datetime, None]:
+        return self.reserved
+
+
+    def set_reserved(self, reserved: bool = True) -> None:
+        if reserved is True:
+            self.reserved = datetime.now(timezone.utc)
+        else:
+            self.reserved = None
+
+
     def get_sku(self) -> str:
         return self.sku
 
@@ -97,6 +111,7 @@ class NonFungibleItem(db.Model):
                 "color": self.get_color(),
                 "notes": self.get_notes(),
                 "price_cents": self.get_price_cents(),
+                "reserved": self.get_reserved(),
                 "sku": self.get_sku(),
                 "sold": self.get_sold()
             }
@@ -108,6 +123,10 @@ class NonFungibleItem(db.Model):
             print("Couldn't generate NonFungibleItem summary")
 
             return {}
+
+
+    def reserve(self) -> None:
+        self.set_reserved()
 
 
     def update(self, properties) -> None:

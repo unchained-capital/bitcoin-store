@@ -114,6 +114,14 @@ Used for removing quantity from an item stock by SKU.
 POST /api/fungible/<sku>/remove/<quantity>
 ```
 
+### Fungible reserve quantity
+
+Used to reserve a quantity for a user to purchase later.
+
+```
+POST /api/fungible/<sku>/reserve/<quantity>
+```
+
 ### Adding or updating a non-fungible item with a serial number and SKU
 
 Used for adding or updating non-fungible items by their serial number and SKU. If the serial number and SKU exist, the item or SKU type are updated else it is added.
@@ -134,6 +142,19 @@ PUT /api/non-fungible/<sku>/<sn>
 
 ```
 GET /api/non-fungible/<sku>/<sn>
+```
+
+### Reserving a non-fungible item for a sale
+
+Used to reserve a non-fungible item for sale. This sets a UTC datetime on the reserved field for later expiration.
+```
+PUT /api/non-fungible/<sku>/<sn>/reservation
+```
+
+### Removing a non-fungible item reservation
+
+```
+DELETE /api/non-fungible/<sku>/<sn>/reservation
 ```
 
 ## Product Searches

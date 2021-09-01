@@ -9,8 +9,14 @@ from bitcoinstore.api.handlers.post_fungible_add_remove \
     import post_fungible_add_remove as post_fungible_add_remove_handler
 from bitcoinstore.api.handlers.put_fungible \
     import put_fungible as put_fungible_handler
+from bitcoinstore.api.handlers.post_fungible_reserve \
+    import post_fungible_reserve as post_fungible_reserve_handler
 from bitcoinstore.api.handlers.put_non_fungible \
     import put_non_fungible as put_non_fungible_handler
+from bitcoinstore.api.handlers.put_non_fungible_reserve \
+    import put_non_fungible_reserve as put_non_fungible_reserve_handler
+from bitcoinstore.api.handlers.delete_non_fungible_reserve \
+    import delete_non_fungible_reserve as delete_non_fungible_reserve_handler
 
 
 api = Blueprint("api", __name__)
@@ -90,7 +96,20 @@ def post_fungible_remove(sku, quantity):
 
 
 """
-put_fungible(sku)
+post_fungible_reserve()
+Used to reserve a quantity of fungible units.
+"""
+@api.post("/api/fungible/<string:sku>/reserve/<int:quantity>")
+def post_fungible_reserve(sku, quantity) -> dict:
+        try:
+            return post_fungible_reserve_handler(sku, quantity)
+        except Exception as e:
+            print(e)
+            return "Internal server error", 500
+
+
+"""
+put_fungible()
 Used for adding or updating fungible items by their sku.
 If the sku exists, the item is updated else it is added.
 <body application/json> {
@@ -112,7 +131,7 @@ def put_fungible(sku) -> dict:
 
 
 """
-put_non_fungible(sn)
+put_non_fungible()
 Used for adding or updating non-fungible items by their serial number and sku.
 If the serial number and sku exists, the item is updated else it is added.
 <body application/json> {
@@ -129,6 +148,34 @@ def put_non_fungible(sku, sn):
     try:
         properties = request.json
         return put_non_fungible_handler(sku, sn, properties)
+    except Exception as e:
+        print(e)
+        return "Internal server error", 500
+
+
+"""
+put_non_fungible_reserve()
+Used to reserve the non-fungible item for sale.
+This sets the reserved field by current datetime to later expire reservations.
+"""
+@api.put("/api/non-fungible/<string:sku>/<string:sn>/reservation")
+def put_non_fungible_reserve(sku, sn):
+    try:
+        return put_non_fungible_reserve_handler(sku, sn)
+    except Exception as e:
+        print(e)
+        return "Internal server error", 500
+
+
+"""
+delete_non_fungible_reserve()
+Used to reserve the non-fungible item for sale.
+This sets the reserved field by current datetime to later expire reservations.
+"""
+@api.delete("/api/non-fungible/<string:sku>/<string:sn>/reservation")
+def delete_non_fungible_reserve(sku, sn):
+    try:
+        return delete_non_fungible_reserve_handler(sku, sn)
     except Exception as e:
         print(e)
         return "Internal server error", 500

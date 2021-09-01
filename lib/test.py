@@ -7,10 +7,9 @@ class ApiTestMixin(object):
     """
 
     @pytest.fixture(autouse=True)
-    def set_common_fixtures(self, session, client, db):
+    def set_common_fixtures(self, session, client):
         self.session = session
         self.client = client
-        self.db = db
 
 
 class ViewTestMixin(object):

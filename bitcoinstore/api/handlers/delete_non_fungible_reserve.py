@@ -1,34 +1,32 @@
 """
-Handles the validation and loading of a non-fungible item and its associated
-parent type to the db.
+Reserves a non-fungible item for sale.
 """
 
 from bitcoinstore.extensions import db
 from bitcoinstore.api.models.NonFungibleItem import NonFungibleItem
 from bitcoinstore.api.models.NonFungibleType import NonFungibleType
 
-def put_non_fungible(sku, sn, properties) -> dict:
+def delete_non_fungible_reserve(sku, sn) -> dict:
 
     try:
         type = db.session.query(NonFungibleType).get(sku)
 
-        if not type: # SKU type does not exist, create one
-            type = NonFungibleType(sku, properties)
-            db.session.add(type)
-        else:
-            type.update(properties)
+        if not type:
+            print("Here 1")
+            return "NonFungibleType: SKU does not exist", 404
 
 
         item = db.session.query(NonFungibleItem).get(sn)
-        
-        if not item: # SN item does not exist, create one
-            item = NonFungibleItem(sn, properties)
-            item.sku = sku
+
+        if not item:
+            print("Here 2")
+            return "NonFungibleItem: SN does not exist", 404
+
+        if item.get_sold() is True:
+            return "Item is already sold", 405
         else:
-            item.update(properties)
+            item.set_reserved(False)
 
-
-        db.session.add(type)
         db.session.add(item)
         db.session.commit()
 

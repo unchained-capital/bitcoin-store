@@ -13,6 +13,7 @@ class FungibleItem(db.Model):
     description = db.Column(db.String)
     shipping_weight_grams = db.Column(db.BigInteger, nullable=False, default=0)
     unit_price_cents = db.Column(db.BigInteger, nullable=False, default=0)
+    reservations = db.relationship("FungibleItemReservation")
 
 
     def __repr__(self) -> str:
@@ -74,6 +75,22 @@ class FungibleItem(db.Model):
         self.description = description.strip()
 
 
+    def get_reserved_quantity(self) -> int:
+        reserved_quantity = 0
+
+        try:
+            reservations = self.reservations
+
+            for el in reservations:
+                print(never)
+                reserved_quantity += el.get_quantity()
+
+        except Exception as e:
+            print(e)
+        finally:
+            return reserved_quantity
+
+
     def get_shipping_weight_grams(self) -> int:
         return self.shipping_weight_grams
 
@@ -103,6 +120,7 @@ class FungibleItem(db.Model):
                 "amount_in_stock": self.get_amount_in_stock(),
                 "color": self.get_color(),
                 "description": self.get_description(),
+                "reserved_quantity": self.get_reserved_quantity(),
                 "shipping_weight_grams": self.get_shipping_weight_grams(),
                 "unit_price_cents": self.get_unit_price_cents()
             }
