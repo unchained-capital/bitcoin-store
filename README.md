@@ -62,6 +62,101 @@ only valid for a certain amount of time (perhaps an hour). After
 that time, a backend cleanup job will come through and automatically
 remove the reservation.
 
+### Adding a new fungible item without a SKU
+
+Used for adding fungible items without a SKU. This creates an item SKU.
+
+```
+POST /api/fungible
+<body application/json> {
+    amount_in_stock: int | undefined
+    color: str | undefined
+    description: str | undefined
+    shipping_weight_grams: int | undefined
+    unit_price_cents: int | undefined
+}
+```
+
+### Adding or updating a fungible item with a SKU
+
+Used for adding or updating fungible items by their SKU. If the SKU exists, the item is updated else it is added.
+
+```
+PUT /api/fungible/<sku>
+<body application/json> {
+    amount_in_stock: int | undefined
+    color: str | undefined
+    description: str | undefined
+    shipping_weight_grams: int | undefined
+    unit_price_cents: int | undefined
+}
+```
+
+### Retrieving a fungible item by SKU
+
+```
+GET /api/fungible/<sku>
+```
+
+### Fungible add quantity
+
+Used for adding quantity to an item stock by SKU.
+
+```
+POST /api/fungible/<sku>/add/<quantity>
+```
+
+### Fungible remove quantity
+
+Used for removing quantity from an item stock by SKU.
+
+```
+POST /api/fungible/<sku>/remove/<quantity>
+```
+
+### Fungible reserve quantity
+
+Used to reserve a quantity for a user to purchase later.
+
+```
+POST /api/fungible/<sku>/reserve/<quantity>
+```
+
+### Adding or updating a non-fungible item with a serial number and SKU
+
+Used for adding or updating non-fungible items by their serial number and SKU. If the serial number and SKU exist, the item or SKU type are updated else it is added.
+
+```
+PUT /api/non-fungible/<sku>/<sn>
+<body application/json> {
+    color: str | undefined
+    description: str | undefined # This is a SKU parent type attribute
+    notes: str | undefined
+    price_cents: int | undefined
+    shipping_weight_grams: int | undefined # This is a SKU parent type attribute
+    sold: bool | undefined
+}
+```
+
+### Retrieving a non-fungible item by SKU and serial number
+
+```
+GET /api/non-fungible/<sku>/<sn>
+```
+
+### Reserving a non-fungible item for a sale
+
+Used to reserve a non-fungible item for sale. This sets a UTC datetime on the reserved field for later expiration.
+```
+PUT /api/non-fungible/<sku>/<sn>/reservation
+```
+
+### Removing a non-fungible item reservation
+
+```
+DELETE /api/non-fungible/<sku>/<sn>/reservation
+```
+
 ## Product Searches
 
 TBD
