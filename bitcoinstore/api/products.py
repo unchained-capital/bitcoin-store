@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-from flask import Blueprint, make_response, jsonify, request, current_app
+from flask import Blueprint, jsonify, request, current_app
 from sqlalchemy.exc import IntegrityError
 
 from bitcoinstore.extensions import db
@@ -19,18 +19,18 @@ def getAll():
             .all()
     )
 
-    return make_response(jsonify([Product.serialize(product) for product in products]), 200)
+    return jsonify([Product.serialize(product) for product in products]), HTTPStatus.OK
 
 @products.post("")
 def create():
     args = request.json
     if not args:
-        return "payload required", 400
+        return "payload required", HTTPStatus.BAD_REQUEST
 
     if "fungible" not in args:
-        return "fungible is required", 400
+        return "fungible is required", HTTPStatus.BAD_REQUEST
     elif not args.get("fungible") and "serial" not in args:
-        return "serial is required for non-fungible products", 400
+        return "serial is required for non-fungible products", HTTPStatus.BAD_REQUEST
 
     is_fungible = args.get("fungible")
 
@@ -38,7 +38,7 @@ def create():
     if (args.get("fungible") and non_fungible_fields.intersection(set(args.keys()))) or \
             (not args.get("fungible") and fungible_fields.intersection(set(args.keys()))):
         return "fungible="+str(args.get("fungible"))+" but payload includes invalid fields. fungible_fields="+ \
-               str(fungible_fields) + " non_fungible_fields=" + str(non_fungible_fields), 400
+               str(fungible_fields) + " non_fungible_fields=" + str(non_fungible_fields), HTTPStatus.BAD_REQUEST
 
     product = Product(
         sku = args.get("sku"),
@@ -48,9 +48,9 @@ def create():
         weight = args.get("weight"),
     )
 
-    # flush product to autogenerate product.id
     try:
         db.session.add(product)
+        # write product to db session to autogenerate product.id
         db.session.flush()
 
         if is_fungible:
@@ -72,9 +72,9 @@ def create():
     except IntegrityError as ie:
         current_app.logger.info(ie)
         db.session.rollback()
-        return ie.orig.diag.message_detail, 409
+        return ie.orig.diag.message_detail, HTTPStatus.CONFLICT
 
-    return (jsonify(product.serialize()), HTTPStatus.CREATED)
+    return jsonify(product.serialize()), HTTPStatus.CREATED
 
 @products.get("/up")
 def up():
