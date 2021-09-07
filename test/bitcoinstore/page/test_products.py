@@ -42,9 +42,8 @@ class TestProducts(ViewTestMixin):
 	def test_create_fp(self):
 		response = self.client.post(url_for("products.create"), json=fp)
 		assert 201 == response.status_code
-		# why is the left arg in a list only after the first POST call?? it doesn't do that in the actual response...¯\_(ツ)_/¯
-		assert response.get_json()["sku"][0] == fp["sku"]
-		assert response.get_json()["name"][0] == fp["name"]
+		assert response.get_json()["sku"] == fp["sku"]
+		assert response.get_json()["name"] == fp["name"]
 		assert response.get_json()["description"] == fp["description"]
 		assert response.get_json()["price"] == fp["price"]
 		assert response.get_json()["weight"] == fp["weight"]
@@ -55,8 +54,8 @@ class TestProducts(ViewTestMixin):
 	def test_create_nfp(self):
 		response = self.client.post(url_for("products.create"), json=nfp)
 		assert 201 == response.status_code
-		assert response.get_json()["sku"][0] == nfp["sku"]
-		assert response.get_json()["name"][0] == nfp["name"]
+		assert response.get_json()["sku"] == nfp["sku"]
+		assert response.get_json()["name"] == nfp["name"]
 		assert response.get_json()["description"] == nfp["description"]
 		assert response.get_json()["price"] == nfp["price"]
 		assert response.get_json()["weight"] == nfp["weight"]
@@ -68,8 +67,8 @@ class TestProducts(ViewTestMixin):
 
 		response = self.client.post(url_for("products.create"), json=nfp)
 		assert 201 == response.status_code
-		assert response.get_json()["sku"][0] == nfp["sku"]
-		assert response.get_json()["name"][0] == nfp["name"]
+		assert response.get_json()["sku"] == nfp["sku"]
+		assert response.get_json()["name"] == nfp["name"]
 		assert response.get_json()["description"] == nfp["description"]
 		assert response.get_json()["price"] == nfp["price"]
 		assert response.get_json()["weight"] == nfp["weight"]
@@ -91,8 +90,8 @@ class TestProducts(ViewTestMixin):
 	def test_create_fp_then_nfp(self):
 		response = self.client.post(url_for("products.create"), json=fp)
 		assert 201 == response.status_code
-		assert response.get_json()["sku"][0] == fp["sku"]
-		assert response.get_json()["name"][0] == fp["name"]
+		assert response.get_json()["sku"] == fp["sku"]
+		assert response.get_json()["name"] == fp["name"]
 		assert response.get_json()["description"] == fp["description"]
 		assert response.get_json()["price"] == fp["price"]
 		assert response.get_json()["weight"] == fp["weight"]
@@ -140,27 +139,29 @@ class TestProducts(ViewTestMixin):
 		assert 400 == response.status_code
 		assert "sku" in str(response.data)
 
-	def test_create_fp_invalid_fields(self):
+	def test_create_fp_invalid_fields_ignored(self):
 		# fungible with serial
 		response = self.client.post(url_for("products.create"), json={**fp, 'serial': "unique_serial"})
-		assert 400 == response.status_code
-		assert "serial" in str(response.data)
+		assert 201 == response.status_code
+
+		self.tearDown()
+		self.setUp()
 
 		# fungible with nfp_desc
 		response = self.client.post(url_for("products.create"), json={**fp, "nfp_desc": "this very unique fungible item has scratches on the gas tank"})
-		assert 400 == response.status_code
-		assert "nfp_desc" in str(response.data)
+		assert 201 == response.status_code
 
 	def test_create_nfp_invalid_fields(self):
 		# nfp with qty
 		response = self.client.post(url_for("products.create"), json={**nfp, "qty":1})
-		assert 400 == response.status_code
-		assert "qty" in str(response.data)
+		assert 201 == response.status_code
+
+		self.tearDown()
+		self.setUp()
 
 		# nfp with qty_reserved
 		response = self.client.post(url_for("products.create"), json={**nfp, "qty_reserved":1})
-		assert 400 == response.status_code
-		assert "qty_reserved" in str(response.data)
+		assert 201 == response.status_code
 
 	def test_create_fp_duplicate_sku(self):
 		response = self.client.post(url_for("products.create"), json=fp)
@@ -168,14 +169,12 @@ class TestProducts(ViewTestMixin):
 
 		response = self.client.post(url_for("products.create"), json=fp)
 		assert 409 == response.status_code
-		# error message complains about duplicate fp primary key
-		assert "productId" in str(response.data)
+		assert "sku" in str(response.data)
 
 	def test_create_nfp_duplicate_serial(self):
 		response = self.client.post(url_for("products.create"), json=nfp)
 		assert 201 == response.status_code
 
-		# duplicate serial
 		response = self.client.post(url_for("products.create"), json={**nfp, "sku": "BATCAR"})
 		assert 409 == response.status_code
 		assert "serial" in str(response.data)
@@ -184,28 +183,27 @@ class TestProducts(ViewTestMixin):
 		response = self.client.post(url_for("products.create"), json=nfp)
 		assert 201 == response.status_code
 
-		# duplicate sku
 		response = self.client.post(url_for("products.create"), json={**nfp, "serial": "something_different"})
 		assert 201 == response.status_code
 		assert "something_different" in str(response.data)
 
-	# no idea why this test is broken. it works fine outside of unit tests
-	# def test_get_all(self):
-	# 	# return empty list to start
-	# 	response = self.client.get(url_for("products.create"))
-	# 	assert response.status_code == 200
-	# 	assert response.json == {"fungible_products":[],"non_fungible_products":[]}
-	#
-	# 	# add two objects
-	# 	response = self.client.post(url_for("products.create"), json=nfp)
-	# 	assert response.status_code == 201
-	# 	response = self.client.post(url_for("products.create"), json=fp)
-	# 	assert response.status_code == 201
-	#
-	# 	# get both objects
-	# 	response = self.client.get(url_for("products.getAll"))
-	# 	assert response.status_code == 200
-	# 	# assert len(response.json) == 2
-	# 	# # check that returned skus are what we expect
-	# 	# returned_skus = [response.json[0]['sku'],response.json[1]['sku']]
-	# 	# assert nfp['sku'] in returned_skus and fp['sku'] in returned_skus
+	def test_get_all(self):
+		# return empty list to start
+		response = self.client.get(url_for("products.create"))
+		assert response.status_code == 200
+		assert response.json == []
+
+		# add two objects
+		response = self.client.post(url_for("products.create"), json=nfp)
+		assert response.status_code == 201
+		response = self.client.post(url_for("products.create"), json=fp)
+		assert response.status_code == 201
+
+		# get both objects
+		response = self.client.get(url_for("products.getAll"))
+		assert response.status_code == 200
+		assert len(response.json) == 2
+		# check that returned skus are what we expect
+		# there is probably a more clever way to do this, i welcome your code review comments
+		returned_skus = [response.json[0]['sku'],response.json[1]['sku']]
+		assert nfp['sku'] in returned_skus and fp['sku'] in returned_skus
