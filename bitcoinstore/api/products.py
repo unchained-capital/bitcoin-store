@@ -1,13 +1,19 @@
 from http import HTTPStatus
 
 from flask import Blueprint, jsonify, request, current_app
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, DBAPIError
 
 from bitcoinstore.extensions import db
 from bitcoinstore.initializers import redis
 from bitcoinstore.model.product import NonFungibleProduct, FungibleProduct
 
 products = Blueprint("products", __name__, template_folder="templates")
+
+@products.get("/up")
+def up():
+    redis.ping()
+    db.engine.execute("SELECT 1")
+    return ""
 
 # TODO add query param: sku
 # TODO pagination
@@ -60,6 +66,7 @@ def getNonFungible(id):
 
     return jsonify(serialize(products)), HTTPStatus.OK
 
+# TODO split into fungible and nonfungible URLs, remove fungible param from input
 @products.post("")
 def create():
     args = request.json
@@ -76,44 +83,82 @@ def create():
 
     is_fungible = args.get("fungible")
 
-    try:
-        if is_fungible:
-            product = FungibleProduct(
-                sku = args.get("sku"),
-                name = args.get("name"),
-                description = args.get("description"),
-                qty = args.get("qty"),
-                qty_reserved = args.get("qty_reserved"),
-                price=args.get("price"),
-                weight=args.get("weight"),
-            )
-        else:
-            product = NonFungibleProduct(
-                sku = args.get("sku"),
-                name = args.get("name"),
-                description = args.get("description"),
-                serial = args.get("serial"),
-                nfp_desc = args.get("nfp_desc"),
-                reserved = args.get("reserved"),
-                price=args.get("price"),
-                weight=args.get("weight"),
-            )
+    if is_fungible:
+        product = FungibleProduct(
+            sku = args.get("sku"),
+            name = args.get("name"),
+            description = args.get("description"),
+            qty = args.get("qty"),
+            qty_reserved = args.get("qty_reserved"),
+            price=args.get("price"),
+            weight=args.get("weight"),
+        )
+    else:
+        product = NonFungibleProduct(
+            sku = args.get("sku"),
+            name = args.get("name"),
+            description = args.get("description"),
+            serial = args.get("serial"),
+            nfp_desc = args.get("nfp_desc"),
+            reserved = args.get("reserved"),
+            price=args.get("price"),
+            weight=args.get("weight"),
+        )
 
-        db.session.add(product)
-        db.session.commit()
-
-    except IntegrityError as ie:
-        current_app.logger.info(ie)
-        db.session.rollback()
-        return ie.orig.diag.message_detail, HTTPStatus.CONFLICT
+    db.session.add(product)
+    error = commit()
+    if error:
+        return error
 
     return jsonify(product.serialize()), HTTPStatus.CREATED
 
-@products.get("/up")
-def up():
-    redis.ping()
-    db.engine.execute("SELECT 1")
-    return ""
+@products.put("nonfungible/<string:id>")
+def updateNonFungible(id):
+    nfp = db.session.query(NonFungibleProduct).get(id)
+    if nfp is None:
+        return "Not found: non fungible product id=" + id, HTTPStatus.NOT_FOUND
+
+    args = request.json
+    if not args:
+        return "payload required", HTTPStatus.BAD_REQUEST
+
+    # update object fields
+    for key in NonFungibleProduct.__dict__.keys():
+        # can't update id
+        if key == 'id':
+            continue
+        if key in args:
+            setattr(nfp, key, args[key])
+
+    error = commit()
+    if error:
+        return error
+
+    return jsonify(serialize(nfp)), HTTPStatus.OK
+
+@products.put("fungible/<string:id>")
+def updateFungible(id):
+    fp = db.session.query(FungibleProduct).get(id)
+    if fp is None:
+        return "Not found: fungible product id=" + id, HTTPStatus.NOT_FOUND
+
+    args = request.json
+    if not args:
+        return "payload required", HTTPStatus.BAD_REQUEST
+
+    # update object fields
+    for key in FungibleProduct.__dict__.keys():
+        # can't update id
+        if key == 'id':
+            continue
+        if key in args:
+            setattr(fp, key, args[key])
+
+    error = commit()
+    if error:
+        return error
+
+    return jsonify(serialize(fp)), HTTPStatus.OK
 
 def serialize(products):
     if isinstance(products, FungibleProduct):
@@ -131,3 +176,19 @@ def serialize(products):
             raise Exception("list contains object that is not FungibleProduct or NonFungibleProduct")
 
     return serialized
+
+def commit():
+    try:
+        db.session.commit()
+    except IntegrityError as ie:
+        current_app.logger.info(ie)
+        db.session.rollback()
+        return ie.orig.diag.message_detail, HTTPStatus.CONFLICT
+    except DBAPIError as dbe:
+        current_app.logger.info(dbe)
+        db.session.rollback()
+        return str(dbe.orig), HTTPStatus.BAD_REQUEST
+
+    # TODO match up other db errors with HTTP codes: HTTP 500 for non-user errors, etc.
+
+    return None

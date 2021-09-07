@@ -65,6 +65,7 @@ class FungibleProduct(db.Model):
     price = db.Column(db.Integer)
     weight = db.Column(db.Float)
 
+    # TODO why doesn't this constraint work?
     db.CheckConstraint("qty >= qty_reserved")
     db.Index("index_sku", unique=True)
 

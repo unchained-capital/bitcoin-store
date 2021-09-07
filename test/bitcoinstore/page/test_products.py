@@ -15,6 +15,17 @@ nfp = {
 	"nfp_desc":"black 1974 Ford Falcon XB GT w/ supercharger, pursuit special"
 }
 
+nfp2 = {
+	"sku":"TREADED_CAR",
+	"name": "car w/ tank treads",
+	"description": "tank treads, engine, passenger compartment",
+	"price":12000000,
+	"weight":3000,
+	"fungible":False,
+	"serial":"bulletfarmer",
+	"nfp_desc":'Howe and Howe Ripsaw EV1 "The Peacemaker"'
+}
+
 fp = {
 	"sku":"CAR",
 	"name":"an automobile",
@@ -24,6 +35,16 @@ fp = {
 	"fungible":True,
 	"qty":10,
 	"qty_reserved":1
+}
+
+fp2 = {
+	"sku": "BIKE",
+	"name": "bicycle",
+	"description": "two wheels, pedals, handlebars",
+	"price": 10000,
+	"weight": 30,
+	"qty": 100,
+	"qty_reserved": 11
 }
 
 
@@ -42,8 +63,9 @@ class TestProducts(ViewTestMixin):
 		assert json["description"] == product["description"]
 		assert json["price"] == product["price"]
 		assert json["weight"] == product["weight"]
-		assert json["fungible"] == product["fungible"]
 
+		if 'fungible' in product:
+			assert json["fungible"] == product["fungible"]
 		if 'qty' in product:
 			assert json["qty"] == product["qty"]
 		if 'qty_reserved' in product:
@@ -234,3 +256,42 @@ class TestProducts(ViewTestMixin):
 		returned_ids = [response.json[0]['fungible_id'], response.json[1]['fungible_id']]
 		for id in ids:
 			assert id in returned_ids
+
+	def test_update_fp(self):
+		response = self.client.post(url_for("products.create"), json=fp)
+		assert 201 == response.status_code
+		id = response.get_json()["fungible_id"]
+
+		response = self.client.put(url_for("products.updateFungible", id=id), json=fp2)
+		assert 200 == response.status_code
+		self.validateFields(response.get_json(), fp2)
+
+	def test_update_fp_ignore_invalid_fields(self):
+		response = self.client.post(url_for("products.create"), json=fp)
+		assert 201 == response.status_code
+		id = response.get_json()["fungible_id"]
+
+		response = self.client.put(url_for("products.updateFungible", id=id), json={**fp2, "serial":"cap'n crunch","nfp_desc":"the crunchiest"})
+		assert 200 == response.status_code
+		self.validateFields(response.get_json(), fp2)
+		assert "serial" not in response.get_json()
+		assert "nfp_desc" not in response.get_json()
+
+	def test_update_nfp(self):
+		response = self.client.post(url_for("products.create"), json=nfp)
+		assert 201 == response.status_code
+		id = response.get_json()["non_fungible_id"]
+
+		response = self.client.put(url_for("products.updateNonFungible", id=id), json=nfp2)
+		assert 200 == response.status_code
+		self.validateFields(response.get_json(), nfp2)
+
+	def test_update_nfp_ignore_invalid_fields(self):
+		response = self.client.post(url_for("products.create"), json=nfp)
+		assert 201 == response.status_code
+		id = response.get_json()["non_fungible_id"]
+
+		response = self.client.put(url_for("products.updateNonFungible", id=id), json={**nfp2, "qty":1,"qty_reserved":1})
+		assert 200 == response.status_code
+		self.validateFields(response.get_json(), nfp2)
+		assert "qty" not in response.get_json()
