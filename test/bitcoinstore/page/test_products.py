@@ -1,6 +1,7 @@
 from flask import url_for
 
 from bitcoinstore.extensions import db
+from bitcoinstore.model.product import FungibleProduct, NonFungibleProduct
 from lib.test import ViewTestMixin
 
 nfp = {
@@ -35,6 +36,23 @@ class TestProducts(ViewTestMixin):
 		db.session.remove()
 		db.drop_all()
 
+	def validateFields(self, json, product):
+		assert json["sku"] == product["sku"]
+		assert json["name"] == product["name"]
+		assert json["description"] == product["description"]
+		assert json["price"] == product["price"]
+		assert json["weight"] == product["weight"]
+		assert json["fungible"] == product["fungible"]
+
+		if 'qty' in product:
+			assert json["qty"] == product["qty"]
+		if 'qty_reserved' in product:
+			assert json["qty_reserved"] == product["qty_reserved"]
+		if 'serial' in product:
+			assert json["serial"] == product["serial"]
+		if 'nfp_desc' in product:
+			assert json["nfp_desc"] == product["nfp_desc"]
+
 	def test_create_no_args(self):
 		response = self.client.post(url_for("products.create"))
 		assert 400 == response.status_code
@@ -42,85 +60,30 @@ class TestProducts(ViewTestMixin):
 	def test_create_fp(self):
 		response = self.client.post(url_for("products.create"), json=fp)
 		assert 201 == response.status_code
-		assert response.get_json()["sku"] == fp["sku"]
-		assert response.get_json()["name"] == fp["name"]
-		assert response.get_json()["description"] == fp["description"]
-		assert response.get_json()["price"] == fp["price"]
-		assert response.get_json()["weight"] == fp["weight"]
-		assert response.get_json()["fungible"] == fp["fungible"]
-		assert response.get_json()["qty"] == fp["qty"]
-		assert response.get_json()["qty_reserved"] == fp["qty_reserved"]
+		self.validateFields(response.get_json(), fp)
 
 	def test_create_nfp(self):
 		response = self.client.post(url_for("products.create"), json=nfp)
 		assert 201 == response.status_code
-		assert response.get_json()["sku"] == nfp["sku"]
-		assert response.get_json()["name"] == nfp["name"]
-		assert response.get_json()["description"] == nfp["description"]
-		assert response.get_json()["price"] == nfp["price"]
-		assert response.get_json()["weight"] == nfp["weight"]
-		assert response.get_json()["fungible"] == nfp["fungible"]
-		assert response.get_json()["serial"] == nfp["serial"]
-		assert response.get_json()["nfp_desc"] == nfp["nfp_desc"]
+		self.validateFields(response.get_json(), nfp)
 
 	def test_create_nfp_then_fp(self):
-
 		response = self.client.post(url_for("products.create"), json=nfp)
 		assert 201 == response.status_code
-		assert response.get_json()["sku"] == nfp["sku"]
-		assert response.get_json()["name"] == nfp["name"]
-		assert response.get_json()["description"] == nfp["description"]
-		assert response.get_json()["price"] == nfp["price"]
-		assert response.get_json()["weight"] == nfp["weight"]
-		assert response.get_json()["fungible"] == nfp["fungible"]
-		assert response.get_json()["serial"] == nfp["serial"]
-		assert response.get_json()["nfp_desc"] == nfp["nfp_desc"]
+		self.validateFields(response.get_json(), nfp)
 
 		response = self.client.post(url_for("products.create"), json=fp)
 		assert 201 == response.status_code
-		assert response.get_json()["sku"] == fp["sku"]
-		assert response.get_json()["name"] == fp["name"]
-		assert response.get_json()["description"] == fp["description"]
-		assert response.get_json()["price"] == fp["price"]
-		assert response.get_json()["weight"] == fp["weight"]
-		assert response.get_json()["fungible"] == fp["fungible"]
-		assert response.get_json()["qty"] == fp["qty"]
-		assert response.get_json()["qty_reserved"] == fp["qty_reserved"]
+		self.validateFields(response.get_json(), fp)
 
 	def test_create_fp_then_nfp(self):
 		response = self.client.post(url_for("products.create"), json=fp)
 		assert 201 == response.status_code
-		assert response.get_json()["sku"] == fp["sku"]
-		assert response.get_json()["name"] == fp["name"]
-		assert response.get_json()["description"] == fp["description"]
-		assert response.get_json()["price"] == fp["price"]
-		assert response.get_json()["weight"] == fp["weight"]
-		assert response.get_json()["fungible"] == fp["fungible"]
-		assert response.get_json()["qty"] == fp["qty"]
-		assert response.get_json()["qty_reserved"] == fp["qty_reserved"]
+		self.validateFields(response.get_json(), fp)
 
 		response = self.client.post(url_for("products.create"), json=nfp)
 		assert 201 == response.status_code
-		assert response.get_json()["sku"] == nfp["sku"]
-		assert response.get_json()["name"] == nfp["name"]
-		assert response.get_json()["description"] == nfp["description"]
-		assert response.get_json()["price"] == nfp["price"]
-		assert response.get_json()["weight"] == nfp["weight"]
-		assert response.get_json()["fungible"] == nfp["fungible"]
-		assert response.get_json()["serial"] == nfp["serial"]
-		assert response.get_json()["nfp_desc"] == nfp["nfp_desc"]
-
-	def test_create_fp_then_nfp_dont_update_product_fields(self):
-		response = self.client.post(url_for("products.create"), json=fp)
-		assert 201 == response.status_code
-
-		# updates to product fields should be ignored
-		nfp_diff_product_fields = {**nfp}
-		nfp_diff_product_fields.update({"description":"a new desc","name":"a diff name"})
-		response = self.client.post(url_for("products.create"), json=nfp_diff_product_fields)
-		assert 201 == response.status_code
-		assert "a new desc" not in response.get_json()
-		assert "a diff name" not in response.get_json()
+		self.validateFields(response.get_json(), nfp)
 
 	def test_create_missing_required_fields(self):
 		# fungible without fungible field set
@@ -143,6 +106,7 @@ class TestProducts(ViewTestMixin):
 		# fungible with serial
 		response = self.client.post(url_for("products.create"), json={**fp, 'serial': "unique_serial"})
 		assert 201 == response.status_code
+		assert 'serial' not in response.get_json()
 
 		self.tearDown()
 		self.setUp()
@@ -150,11 +114,13 @@ class TestProducts(ViewTestMixin):
 		# fungible with nfp_desc
 		response = self.client.post(url_for("products.create"), json={**fp, "nfp_desc": "this very unique fungible item has scratches on the gas tank"})
 		assert 201 == response.status_code
+		assert 'nfp_desc' not in response.get_json()
 
 	def test_create_nfp_invalid_fields(self):
 		# nfp with qty
 		response = self.client.post(url_for("products.create"), json={**nfp, "qty":1})
 		assert 201 == response.status_code
+		assert 'qty' not in response.get_json()
 
 		self.tearDown()
 		self.setUp()
@@ -162,6 +128,7 @@ class TestProducts(ViewTestMixin):
 		# nfp with qty_reserved
 		response = self.client.post(url_for("products.create"), json={**nfp, "qty_reserved":1})
 		assert 201 == response.status_code
+		assert 'qty' not in response.get_json()
 
 	def test_create_fp_duplicate_sku(self):
 		response = self.client.post(url_for("products.create"), json=fp)
@@ -207,3 +174,63 @@ class TestProducts(ViewTestMixin):
 		# there is probably a more clever way to do this, i welcome your code review comments
 		returned_skus = [response.json[0]['sku'],response.json[1]['sku']]
 		assert nfp['sku'] in returned_skus and fp['sku'] in returned_skus
+
+	def test_get_nfp(self):
+		response = self.client.post(url_for("products.create"), json=nfp)
+		assert 201 == response.status_code
+		id = response.get_json()["non_fungible_id"]
+
+		response = self.client.get(url_for("products.getNonFungible", id=id))
+		assert 200 == response.status_code
+		self.validateFields(response.get_json(), nfp)
+		assert response.get_json()['non_fungible_id'] == id
+
+	def test_get_nfp_all(self):
+		ids = []
+		response = self.client.post(url_for("products.create"), json=nfp)
+		assert 201 == response.status_code
+		ids.append(response.get_json()["non_fungible_id"])
+
+		different_nfp = {**nfp}
+		different_nfp.update({"serial":"different_serial"})
+		response = self.client.post(url_for("products.create"), json=different_nfp)
+		assert 201 == response.status_code
+		ids.append(response.get_json()["non_fungible_id"])
+
+		response = self.client.get(url_for("products.getNonFungibleAll"))
+		assert 200 == response.status_code
+		assert len(response.json) == 2
+		# check that returned skus are what we expect
+		returned_ids = [response.json[0]['non_fungible_id'], response.json[1]['non_fungible_id']]
+		for id in ids:
+			assert id in returned_ids
+
+	def test_get_fp(self):
+		response = self.client.post(url_for("products.create"), json=fp)
+		assert 201 == response.status_code
+		id = response.get_json()["fungible_id"]
+
+		response = self.client.get(url_for("products.getFungible", id=id))
+		assert 200 == response.status_code
+		self.validateFields(response.get_json(), fp)
+		assert response.get_json()['fungible_id'] == id
+
+	def test_get_fp_all(self):
+		ids = []
+		response = self.client.post(url_for("products.create"), json=fp)
+		assert 201 == response.status_code
+		ids.append(response.get_json()["fungible_id"])
+
+		different_fp = {**fp}
+		different_fp.update({"sku":"different_sku"})
+		response = self.client.post(url_for("products.create"), json=different_fp)
+		assert 201 == response.status_code
+		ids.append(response.get_json()["fungible_id"])
+
+		response = self.client.get(url_for("products.getFungibleAll"))
+		assert 200 == response.status_code
+		assert len(response.json) == 2
+		# check that returned skus are what we expect
+		returned_ids = [response.json[0]['fungible_id'], response.json[1]['fungible_id']]
+		for id in ids:
+			assert id in returned_ids

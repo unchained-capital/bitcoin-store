@@ -32,7 +32,7 @@ class NonFungibleProduct(db.Model):
 
     def serialize(self):
         return {
-            "id": self.id,
+            "non_fungible_id": self.id,
             "sku": self.sku,
             "name": self.name,
             "description": self.description,
@@ -70,7 +70,7 @@ class FungibleProduct(db.Model):
 
     def serialize(self):
         return {
-            "id": self.id,
+            "fungible_id": self.id,
             "sku": self.sku,
             "name": self.name,
             "description": self.description,

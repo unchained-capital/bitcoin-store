@@ -9,13 +9,10 @@ from bitcoinstore.model.product import NonFungibleProduct, FungibleProduct
 
 products = Blueprint("products", __name__, template_folder="templates")
 
-fungible_fields = {"qty","qty_reserved"}
-non_fungible_fields = {"serial","nfp_desc","reserved"}
-
+# TODO add query param: sku
+# TODO pagination
 @products.get("")
 def getAll():
-    # TODO add query params: fungible, sku
-
     fps = (
         db.session.query(FungibleProduct)
             .all()
@@ -25,21 +22,43 @@ def getAll():
             .all()
     )
 
-    return jsonify(
-        [FungibleProduct.serialize(fp) for fp in fps] +
-        [NonFungibleProduct.serialize(nfp) for nfp in nfps]
-    ), HTTPStatus.OK
+    return jsonify(serialize(nfps) + serialize(fps)), HTTPStatus.OK
 
-# work in progress
-@products.get("/<string:id>")
-def get(sku):
-    # TODO pagination
+# TODO add query param: sku
+@products.get("fungible")
+def getFungibleAll():
     products = (
-        db.session.query(FungibleProduct, NonFungibleProduct)
+        db.session.query(FungibleProduct)
             .all()
     )
 
-    return jsonify({products}), HTTPStatus.OK
+    return jsonify(serialize(products)), HTTPStatus.OK
+
+@products.get("fungible/<string:id>")
+def getFungible(id):
+    product = (
+        FungibleProduct.query.get(id)
+    )
+
+    return jsonify(serialize(product)), HTTPStatus.OK
+
+# TODO add query params: sku, serial
+@products.get("nonfungible")
+def getNonFungibleAll():
+    products = (
+        db.session.query(NonFungibleProduct)
+            .all()
+    )
+
+    return jsonify(serialize(products)), HTTPStatus.OK
+
+@products.get("nonfungible/<string:id>")
+def getNonFungible(id):
+    products = (
+        NonFungibleProduct.query.get(id)
+    )
+
+    return jsonify(serialize(products)), HTTPStatus.OK
 
 @products.post("")
 def create():
@@ -95,3 +114,20 @@ def up():
     redis.ping()
     db.engine.execute("SELECT 1")
     return ""
+
+def serialize(products):
+    if isinstance(products, FungibleProduct):
+        return FungibleProduct.serialize(products)
+    elif isinstance(products, NonFungibleProduct):
+        return NonFungibleProduct.serialize(products)
+
+    serialized = []
+    for product in products:
+        if isinstance(product, FungibleProduct):
+            serialized.append(FungibleProduct.serialize(product))
+        elif isinstance(product, NonFungibleProduct):
+            serialized.append(NonFungibleProduct.serialize(product))
+        else:
+            raise Exception("list contains object that is not FungibleProduct or NonFungibleProduct")
+
+    return serialized
