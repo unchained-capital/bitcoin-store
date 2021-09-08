@@ -54,44 +54,32 @@ def getProduct(type, id):
         return "Not found: " + type.__name__ + ".id=" + id, HTTPStatus.NOT_FOUND
     return jsonify(serialize(product)), HTTPStatus.OK
 
-# TODO split into fungible and nonfungible URLs, remove fungible param from input
-@products.post("")
-def create():
+@products.post("fungible")
+def createFungible():
+    return create(FungibleProduct)
+
+@products.post("nonfungible")
+def createNonFungible():
+    if request.json and "serial" not in request.json:
+        return "sku is required", HTTPStatus.BAD_REQUEST
+
+    return create(NonFungibleProduct)
+
+def create(type):
     args = request.json
     if not args:
         return "payload required", HTTPStatus.BAD_REQUEST
 
-    if "fungible" not in args:
-        return "fungible is required", HTTPStatus.BAD_REQUEST
-    elif args.get("fungible") == False and "serial" not in args:
-        return "serial is required for non-fungible products", HTTPStatus.BAD_REQUEST
-
     if "sku" not in args:
         return "sku is required", HTTPStatus.BAD_REQUEST
 
-    is_fungible = args.get("fungible")
-
-    if is_fungible:
-        product = FungibleProduct(
-            sku = args.get("sku"),
-            name = args.get("name"),
-            description = args.get("description"),
-            qty = args.get("qty"),
-            qty_reserved = args.get("qty_reserved"),
-            price=args.get("price"),
-            weight=args.get("weight"),
-        )
-    else:
-        product = NonFungibleProduct(
-            sku = args.get("sku"),
-            name = args.get("name"),
-            description = args.get("description"),
-            serial = args.get("serial"),
-            nfp_desc = args.get("nfp_desc"),
-            reserved = args.get("reserved"),
-            price=args.get("price"),
-            weight=args.get("weight"),
-        )
+    product = type()
+    for key in type.__dict__.keys():
+        # can't set id
+        if key == 'id':
+            continue
+        if key in args:
+            setattr(product, key, args.get(key))
 
     db.session.add(product)
     error = commit()
