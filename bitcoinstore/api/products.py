@@ -27,31 +27,31 @@ def getAll():
 # TODO add query param: sku
 @products.get("fungible")
 def getFungibleAll():
-    products = db.session.query(FungibleProduct).all()
+    return getAllOfType(FungibleProduct)
 
-    return jsonify(serialize(products)), HTTPStatus.OK
-
-@products.get("fungible/<string:id>")
-def getFungible(id):
-    product = FungibleProduct.query.get(id)
-
-    if not product:
-        return "Not found: fungible product id=" + id, HTTPStatus.NOT_FOUND
-    return jsonify(serialize(product)), HTTPStatus.OK
-
-# TODO add query params: sku, serial
 @products.get("nonfungible")
 def getNonFungibleAll():
-    products = db.session.query(NonFungibleProduct).all()
+    return getAllOfType(NonFungibleProduct)
+
+def getAllOfType(type):
+    products = db.session.query(type).all()
 
     return jsonify(serialize(products)), HTTPStatus.OK
+
+# TODO add query params: sku, serial
+@products.get("fungible/<string:id>")
+def getFungible(id):
+    return getProduct(FungibleProduct, id)
 
 @products.get("nonfungible/<string:id>")
 def getNonFungible(id):
-    product = NonFungibleProduct.query.get(id)
+    return getProduct(NonFungibleProduct, id)
+
+def getProduct(type, id):
+    product = type.query.get(id)
 
     if not product:
-        return "Not found: non fungible product id=" + id, HTTPStatus.NOT_FOUND
+        return "Not found: " + type.__name__ + ".id=" + id, HTTPStatus.NOT_FOUND
     return jsonify(serialize(product)), HTTPStatus.OK
 
 # TODO split into fungible and nonfungible URLs, remove fungible param from input
@@ -102,72 +102,47 @@ def create():
 
 @products.put("nonfungible/<string:id>")
 def updateNonFungible(id):
-    nfp = db.session.query(NonFungibleProduct).get(id)
-    if nfp is None:
-        return "Not found: non fungible product id=" + id, HTTPStatus.NOT_FOUND
-
-    args = request.json
-    if not args:
-        return "payload required", HTTPStatus.BAD_REQUEST
-
-    # update object fields
-    for key in NonFungibleProduct.__dict__.keys():
-        # can't update id
-        if key == 'id':
-            continue
-        if key in args:
-            setattr(nfp, key, args[key])
-
-    error = commit()
-    if error:
-        return error
-
-    return jsonify(serialize(nfp)), HTTPStatus.OK
+    return updateProduct(NonFungibleProduct, id)
 
 @products.put("fungible/<string:id>")
 def updateFungible(id):
-    fp = db.session.query(FungibleProduct).get(id)
-    if fp is None:
-        return "Not found: fungible product id=" + id, HTTPStatus.NOT_FOUND
+    return updateProduct(FungibleProduct, id)
+
+def updateProduct(type, id):
+    product = db.session.query(type).get(id)
+    if product is None:
+        return "Not found: " + type.__name__ + ".id=" + id, HTTPStatus.NOT_FOUND
 
     args = request.json
     if not args:
         return "payload required", HTTPStatus.BAD_REQUEST
 
-    # update object fields
-    for key in FungibleProduct.__dict__.keys():
+    for key in type.__dict__.keys():
         # can't update id
         if key == 'id':
             continue
         if key in args:
-            setattr(fp, key, args[key])
+            setattr(product, key, args[key])
 
     error = commit()
     if error:
         return error
 
-    return jsonify(serialize(fp)), HTTPStatus.OK
+    return jsonify(serialize(product)), HTTPStatus.OK
 
 @products.delete("fungible/<string:id>")
 def deleteFungible(id):
-    product = FungibleProduct.query.get(id)
-
-    if not product:
-        return "Not found: fungible product id=" + id, HTTPStatus.NOT_FOUND
-
-    db.session.delete(product)
-    error = commit()
-    if error:
-        return error
-
-    return "", HTTPStatus.NO_CONTENT
+    return deleteProduct(FungibleProduct, id)
 
 @products.delete("nonfungible/<string:id>")
 def deleteNonFungible(id):
-    product = NonFungibleProduct.query.get(id)
+    return deleteProduct(NonFungibleProduct, id)
+
+def deleteProduct(type, id):
+    product = type.query.get(id)
 
     if not product:
-        return "Not found: nonfungible product id=" + id, HTTPStatus.NOT_FOUND
+        return "Not found: " + type.__name__ + ".id=" + id, HTTPStatus.NOT_FOUND
 
     db.session.delete(product)
     error = commit()
