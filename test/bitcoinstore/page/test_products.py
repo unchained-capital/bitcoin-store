@@ -197,6 +197,14 @@ class TestProducts(ViewTestMixin):
 		returned_skus = [response.json[0]['sku'],response.json[1]['sku']]
 		assert nfp['sku'] in returned_skus and fp['sku'] in returned_skus
 
+	def test_get_fungible_invalid_id(self):
+		response = self.client.get(url_for("products.getFungible", id=1), json=fp)
+		assert 404 == response.status_code
+
+	def test_get_non_fungible_invalid_id(self):
+		response = self.client.get(url_for("products.getNonFungible", id=1), json=fp)
+		assert 404 == response.status_code
+
 	def test_get_nfp(self):
 		response = self.client.post(url_for("products.create"), json=nfp)
 		assert 201 == response.status_code
@@ -257,6 +265,14 @@ class TestProducts(ViewTestMixin):
 		for id in ids:
 			assert id in returned_ids
 
+	def test_update_fungible_invalid_id(self):
+		response = self.client.put(url_for("products.updateFungible", id=1), json=fp)
+		assert 404 == response.status_code
+
+	def test_update_nonfungible_invalid_id(self):
+		response = self.client.put(url_for("products.updateNonFungible", id=1), json=fp)
+		assert 404 == response.status_code
+
 	def test_update_fp(self):
 		response = self.client.post(url_for("products.create"), json=fp)
 		assert 201 == response.status_code
@@ -295,3 +311,25 @@ class TestProducts(ViewTestMixin):
 		assert 200 == response.status_code
 		self.validateFields(response.get_json(), nfp2)
 		assert "qty" not in response.get_json()
+
+	def test_delete_fp(self):
+		response = self.client.post(url_for("products.create"), json=fp)
+		assert 201 == response.status_code
+		id = response.get_json()["fungible_id"]
+
+		response = self.client.delete(url_for("products.deleteFungible", id=id))
+		assert 204 == response.status_code
+
+		response = self.client.get(url_for("products.getFungible", id=id))
+		assert 404 == response.status_code
+
+	def test_delete_nfp(self):
+		response = self.client.post(url_for("products.create"), json=nfp)
+		assert 201 == response.status_code
+		id = response.get_json()["non_fungible_id"]
+
+		response = self.client.delete(url_for("products.deleteNonFungible", id=id))
+		assert 204 == response.status_code
+
+		response = self.client.get(url_for("products.getNonFungible", id=id))
+		assert 404 == response.status_code

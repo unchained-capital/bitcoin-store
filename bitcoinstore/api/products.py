@@ -19,52 +19,40 @@ def up():
 # TODO pagination
 @products.get("")
 def getAll():
-    fps = (
-        db.session.query(FungibleProduct)
-            .all()
-    )
-    nfps = (
-        db.session.query(NonFungibleProduct)
-            .all()
-    )
+    fps = db.session.query(FungibleProduct).all()
+    nfps = db.session.query(NonFungibleProduct).all()
 
     return jsonify(serialize(nfps) + serialize(fps)), HTTPStatus.OK
 
 # TODO add query param: sku
 @products.get("fungible")
 def getFungibleAll():
-    products = (
-        db.session.query(FungibleProduct)
-            .all()
-    )
+    products = db.session.query(FungibleProduct).all()
 
     return jsonify(serialize(products)), HTTPStatus.OK
 
 @products.get("fungible/<string:id>")
 def getFungible(id):
-    product = (
-        FungibleProduct.query.get(id)
-    )
+    product = FungibleProduct.query.get(id)
 
+    if not product:
+        return "Not found: fungible product id=" + id, HTTPStatus.NOT_FOUND
     return jsonify(serialize(product)), HTTPStatus.OK
 
 # TODO add query params: sku, serial
 @products.get("nonfungible")
 def getNonFungibleAll():
-    products = (
-        db.session.query(NonFungibleProduct)
-            .all()
-    )
+    products = db.session.query(NonFungibleProduct).all()
 
     return jsonify(serialize(products)), HTTPStatus.OK
 
 @products.get("nonfungible/<string:id>")
 def getNonFungible(id):
-    products = (
-        NonFungibleProduct.query.get(id)
-    )
+    product = NonFungibleProduct.query.get(id)
 
-    return jsonify(serialize(products)), HTTPStatus.OK
+    if not product:
+        return "Not found: non fungible product id=" + id, HTTPStatus.NOT_FOUND
+    return jsonify(serialize(product)), HTTPStatus.OK
 
 # TODO split into fungible and nonfungible URLs, remove fungible param from input
 @products.post("")
@@ -159,6 +147,34 @@ def updateFungible(id):
         return error
 
     return jsonify(serialize(fp)), HTTPStatus.OK
+
+@products.delete("fungible/<string:id>")
+def deleteFungible(id):
+    product = FungibleProduct.query.get(id)
+
+    if not product:
+        return "Not found: fungible product id=" + id, HTTPStatus.NOT_FOUND
+
+    db.session.delete(product)
+    error = commit()
+    if error:
+        return error
+
+    return "", HTTPStatus.NO_CONTENT
+
+@products.delete("nonfungible/<string:id>")
+def deleteNonFungible(id):
+    product = NonFungibleProduct.query.get(id)
+
+    if not product:
+        return "Not found: nonfungible product id=" + id, HTTPStatus.NOT_FOUND
+
+    db.session.delete(product)
+    error = commit()
+    if error:
+        return error
+
+    return "", HTTPStatus.NO_CONTENT
 
 def serialize(products):
     if isinstance(products, FungibleProduct):
