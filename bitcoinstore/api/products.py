@@ -29,6 +29,7 @@ def getAll():
 def getFungibleAll():
     return getAllOfType(FungibleProduct)
 
+# TODO add query params: sku, serial
 @products.get("nonfungible")
 def getNonFungibleAll():
     return getAllOfType(NonFungibleProduct)
@@ -38,7 +39,6 @@ def getAllOfType(type):
 
     return jsonify(serialize(products)), HTTPStatus.OK
 
-# TODO add query params: sku, serial
 @products.get("fungible/<string:id>")
 def getFungible(id):
     return getProduct(FungibleProduct, id)
