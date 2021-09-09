@@ -24,6 +24,8 @@ class NonFungibleReservation(db.Model):
     expired = db.Column(db.Boolean, default=False)
 
     db.Index("expiration", unique=True)
+    db.Index("serial")
+    db.Index("userId")
 
     def serialize(self):
         return {
@@ -56,6 +58,8 @@ class FungibleReservation(db.Model):
     expired = db.Column(db.Boolean, default=False)
 
     db.Index("expiration", unique=True)
+    db.Index("sku")
+    db.Index("userId")
 
     def serialize(self):
         return {

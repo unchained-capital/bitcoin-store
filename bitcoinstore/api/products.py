@@ -9,33 +9,28 @@ from bitcoinstore.model.product import NonFungibleProduct, FungibleProduct
 
 products = Blueprint("products", __name__, template_folder="templates")
 
-@products.get("/up")
-def up():
-    redis.ping()
-    db.engine.execute("SELECT 1")
-    return ""
-
-# TODO add query param: sku
 # TODO pagination
-@products.get("")
-def getAll():
-    fps = db.session.query(FungibleProduct).all()
-    nfps = db.session.query(NonFungibleProduct).all()
-
-    return jsonify(serialize(nfps) + serialize(fps)), HTTPStatus.OK
-
-# TODO add query param: sku
 @products.get("fungible")
-def getFungibleAll():
-    return getAllOfType(FungibleProduct)
+def queryFungible():
+    query_params = []
+    if request.args.get("sku"):
+        query_params.append(FungibleProduct.sku == request.args.get("sku"))
 
-# TODO add query params: sku, serial
+    return query(FungibleProduct, query_params)
+
+# TODO pagination
 @products.get("nonfungible")
-def getNonFungibleAll():
-    return getAllOfType(NonFungibleProduct)
+def queryNonFungible():
+    query_params = []
+    if request.args.get("sku"):
+        query_params.append(NonFungibleProduct.sku == request.args.get("sku"))
+    if request.args.get("serial"):
+        query_params.append(NonFungibleProduct.serial == request.args.get("serial"))
 
-def getAllOfType(type):
-    products = db.session.query(type).all()
+    return query(NonFungibleProduct, query_params)
+
+def query(type, query_params):
+    products = db.session.query(type).filter(*query_params).all()
 
     return jsonify(serialize(products)), HTTPStatus.OK
 

@@ -1,7 +1,6 @@
 from flask import url_for
 
 from bitcoinstore.extensions import db
-from bitcoinstore.model.product import FungibleProduct, NonFungibleProduct
 from lib.test import ViewTestMixin
 
 nfp = {
@@ -161,27 +160,6 @@ class TestProducts(ViewTestMixin):
 		assert 201 == response.status_code
 		assert "something_different" in str(response.data)
 
-	def test_get_all(self):
-		# return empty list to start
-		response = self.client.get(url_for("products.getAll"))
-		assert response.status_code == 200
-		assert response.json == []
-
-		# add two objects
-		response = self.client.post(url_for("products.createNonFungible"), json=nfp)
-		assert response.status_code == 201
-		response = self.client.post(url_for("products.createFungible"), json=fp)
-		assert response.status_code == 201
-
-		# get both objects
-		response = self.client.get(url_for("products.getAll"))
-		assert response.status_code == 200
-		assert len(response.json) == 2
-		# check that returned skus are what we expect
-		# there is probably a more clever way to do this, i welcome your code review comments
-		returned_skus = [response.json[0]['sku'],response.json[1]['sku']]
-		assert nfp['sku'] in returned_skus and fp['sku'] in returned_skus
-
 	def test_get_fungible_invalid_id(self):
 		response = self.client.get(url_for("products.getFungible", id=1), json=fp)
 		assert 404 == response.status_code
@@ -200,7 +178,7 @@ class TestProducts(ViewTestMixin):
 		self.validateFields(response.get_json(), nfp)
 		assert response.get_json()['non_fungible_id'] == id
 
-	def test_get_nfp_all(self):
+	def test_query_nfp(self):
 		ids = []
 		response = self.client.post(url_for("products.createNonFungible"), json=nfp)
 		assert 201 == response.status_code
@@ -212,13 +190,33 @@ class TestProducts(ViewTestMixin):
 		assert 201 == response.status_code
 		ids.append(response.get_json()["non_fungible_id"])
 
-		response = self.client.get(url_for("products.getNonFungibleAll"))
+		different_nfp = {**nfp}
+		different_nfp.update({"serial":"another_different_serial", "sku":"different_sku"})
+		response = self.client.post(url_for("products.createNonFungible"), json=different_nfp)
+		assert 201 == response.status_code
+		ids.append(response.get_json()["non_fungible_id"])
+
+		# query all
+		response = self.client.get(url_for("products.queryNonFungible"))
 		assert 200 == response.status_code
-		assert len(response.json) == 2
+		assert len(response.json) == 3
 		# check that returned skus are what we expect
-		returned_ids = [response.json[0]['non_fungible_id'], response.json[1]['non_fungible_id']]
+		returned_ids = [response.json[0]['non_fungible_id'], response.json[1]['non_fungible_id'], response.json[2]['non_fungible_id']]
 		for id in ids:
 			assert id in returned_ids
+
+		# query by sku
+		response = self.client.get(url_for("products.queryNonFungible") + "?sku=" + nfp["sku"])
+		assert 200 == response.status_code
+		assert len(response.json) == 2
+		for returned in response.json:
+			assert returned["sku"] == nfp["sku"]
+
+		# query by serial
+		response = self.client.get(url_for("products.queryNonFungible") + "?serial=" + nfp["serial"])
+		assert 200 == response.status_code
+		assert len(response.json) == 1
+		assert response.json[0]["serial"] == nfp["serial"]
 
 	def test_get_fp(self):
 		response = self.client.post(url_for("products.createFungible"), json=fp)
@@ -230,7 +228,7 @@ class TestProducts(ViewTestMixin):
 		self.validateFields(response.get_json(), fp)
 		assert response.get_json()['fungible_id'] == id
 
-	def test_get_fp_all(self):
+	def test_query_fp(self):
 		ids = []
 		response = self.client.post(url_for("products.createFungible"), json=fp)
 		assert 201 == response.status_code
@@ -242,13 +240,19 @@ class TestProducts(ViewTestMixin):
 		assert 201 == response.status_code
 		ids.append(response.get_json()["fungible_id"])
 
-		response = self.client.get(url_for("products.getFungibleAll"))
+		response = self.client.get(url_for("products.queryFungible"))
 		assert 200 == response.status_code
 		assert len(response.json) == 2
 		# check that returned skus are what we expect
 		returned_ids = [response.json[0]['fungible_id'], response.json[1]['fungible_id']]
 		for id in ids:
 			assert id in returned_ids
+
+		# query by sku
+		response = self.client.get(url_for("products.queryFungible") + "?sku=" + nfp["sku"])
+		assert 200 == response.status_code
+		assert len(response.json) == 1
+		assert response.json[0]["sku"] == nfp["sku"]
 
 	def test_update_fungible_invalid_id(self):
 		response = self.client.put(url_for("products.updateFungible", id=1), json=fp)

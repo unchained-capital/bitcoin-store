@@ -9,27 +9,30 @@ from bitcoinstore.model.reservation import NonFungibleReservation, FungibleReser
 reservations = Blueprint("reservations", __name__, template_folder="templates")
 
 # TODO pagination
-@reservations.get("")
-def getAll():
-    f_res = db.session.query(FungibleReservation).all()
-    nf_res = db.session.query(NonFungibleReservation).all()
-
-    return jsonify(serialize(nf_res) + serialize(f_res)), HTTPStatus.OK
-
-# TODO add query param: sku
 @reservations.get("fungible")
-def getFungibleAll():
-    return getAllOfType(FungibleReservation)
+def queryFungible():
+    query_params = []
+    if request.args.get("sku"):
+        query_params.append(FungibleReservation.sku == request.args.get("sku"))
+    if request.args.get("userId"):
+        query_params.append(FungibleReservation.userId == request.args.get("userId"))
 
-# TODO add query params: serial
+    results = db.session.query(FungibleReservation).filter(*query_params).all()
+
+    return jsonify(serialize(results)), HTTPStatus.OK
+
+# TODO pagination
 @reservations.get("nonfungible")
-def getNonFungibleAll():
-    return getAllOfType(NonFungibleReservation)
+def queryNonFungible():
+    query_params = []
+    if request.args.get("userId"):
+        query_params.append(NonFungibleReservation.userId == request.args.get("userId"))
+    if request.args.get("serial"):
+        query_params.append(NonFungibleReservation.serial == request.args.get("serial"))
 
-def getAllOfType(type):
-    reservations = db.session.query(type).all()
+    results = db.session.query(NonFungibleReservation).filter(*query_params).all()
 
-    return jsonify(serialize(reservations)), HTTPStatus.OK
+    return jsonify(serialize(results)), HTTPStatus.OK
 
 @reservations.get("fungible/<string:id>")
 def getFungible(id):
@@ -108,6 +111,9 @@ def deleteReservation(type, id):
     return "", HTTPStatus.NO_CONTENT
 
 def serialize(reservations):
+    if reservations is None:
+        return []
+
     if isinstance(reservations, FungibleReservation):
         return FungibleReservation.serialize(reservations)
     elif isinstance(reservations, NonFungibleReservation):
