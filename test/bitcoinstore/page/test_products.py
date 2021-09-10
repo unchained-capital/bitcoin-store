@@ -161,11 +161,11 @@ class TestProducts(ViewTestMixin):
 		assert "something_different" in str(response.data)
 
 	def test_get_fungible_invalid_id(self):
-		response = self.client.get(url_for("products.getFungible", id=1), json=fp)
+		response = self.client.get(url_for("products.getFungible", id=1))
 		assert 404 == response.status_code
 
 	def test_get_non_fungible_invalid_id(self):
-		response = self.client.get(url_for("products.getNonFungible", id=1), json=fp)
+		response = self.client.get(url_for("products.getNonFungible", id=1))
 		assert 404 == response.status_code
 
 	def test_get_nfp(self):

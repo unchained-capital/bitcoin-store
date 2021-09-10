@@ -35,8 +35,8 @@ class NonFungibleReservation(db.Model):
             "fungible": False,
             "serial": self.serial,
             "userId": self.userId,
-            "created": self.created,
-            "expiration": self.expiration,
+            "created": self.created.isoformat(),
+            "expiration": self.expiration.isoformat(),
             "expired": self.expired,
         }
 
@@ -71,7 +71,7 @@ class FungibleReservation(db.Model):
             "sku": self.sku,
             "qty": self.qty,
             "userId": self.userId,
-            "created": self.created,
-            "expiration": self.expiration,
+            "created": self.created.isoformat(),
+            "expiration": self.expiration.isoformat(),
             "expired": self.expired,
         }

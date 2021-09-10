@@ -76,12 +76,12 @@ def createFungible():
 
 @products.post("nonfungible")
 def createNonFungible():
-    if request.json and "serial" not in request.json:
-        return "sku is required", HTTPStatus.BAD_REQUEST
-
     args = request.json
     if not args:
         return "payload required", HTTPStatus.BAD_REQUEST
+
+    if "serial" not in args:
+        return "sku is required", HTTPStatus.BAD_REQUEST
 
     if "sku" not in args:
         return "sku is required", HTTPStatus.BAD_REQUEST

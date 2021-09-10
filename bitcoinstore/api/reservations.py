@@ -52,10 +52,13 @@ def getReservation(type, id):
 
 @reservations.post("fungible")
 def createFungible():
-    if request.json and "sku" not in request.json:
+    if not request.json:
+        return "payload required", HTTPStatus.BAD_REQUEST
+
+    if request.json.get('sku') is None:
         return "sku is required", HTTPStatus.BAD_REQUEST
 
-    if request.json and "qty" not in request.json:
+    if request.json.get('qty') is None:
         return "qty is required", HTTPStatus.BAD_REQUEST
 
     sku = request.json['sku']
@@ -73,8 +76,11 @@ def createFungible():
 
 @reservations.post("nonfungible")
 def createNonFungible():
-    if request.json and "serial" not in request.json:
-        return "sku is required", HTTPStatus.BAD_REQUEST
+    if not request.json:
+        return "payload required", HTTPStatus.BAD_REQUEST
+
+    if request.json.get("serial") is None:
+        return "serial is required", HTTPStatus.BAD_REQUEST
 
     serial = request.json['serial']
     nfp = db.session.query(NonFungibleProduct).filter(NonFungibleProduct.serial == serial).first()
@@ -89,11 +95,7 @@ def createNonFungible():
         return create(NonFungibleReservation)
 
 def create(type):
-    args = request.json
-    if not args:
-        return "payload required", HTTPStatus.BAD_REQUEST
-
-    if "userId" not in args:
+    if request.json.get('userId') is None:
         return "userId is required", HTTPStatus.BAD_REQUEST
 
     reservation = type()
@@ -101,8 +103,8 @@ def create(type):
         # can't set id
         if key == 'id':
             continue
-        if key in args:
-            setattr(reservation, key, args.get(key))
+        if key in request.json:
+            setattr(reservation, key, request.json.get(key))
 
     db.session.add(reservation)
     error = commit()
