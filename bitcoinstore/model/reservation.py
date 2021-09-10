@@ -18,9 +18,11 @@ class NonFungibleReservation(db.Model):
     expired: bool
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    serial = db.Column(db.String, db.ForeignKey("non_fungible_product.serial"), nullable=False)
+    serial = db.Column(
+        db.String, db.ForeignKey("non_fungible_product.serial"), nullable=False
+    )
     nonFungibleProduct = db.relationship("NonFungibleProduct")
-    userId = db.Column(db.String, nullable = False)
+    userId = db.Column(db.String, nullable=False)
     created = db.Column(DateTime(timezone=True), server_default=func.now())
     expiration = db.Column(DateTime(timezone=True))
     expired = db.Column(db.Boolean, default=False)
@@ -40,6 +42,7 @@ class NonFungibleReservation(db.Model):
             "expired": self.expired,
         }
 
+
 @dataclass
 class FungibleReservation(db.Model):
     id: int
@@ -52,10 +55,12 @@ class FungibleReservation(db.Model):
     expired: bool
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    sku = db.Column(db.String, db.ForeignKey("fungible_product.sku"), nullable=False)
+    sku = db.Column(
+        db.String, db.ForeignKey("fungible_product.sku"), nullable=False
+    )
     fungibleProduct = db.relationship("FungibleProduct")
     qty = db.Column(db.Integer)
-    userId = db.Column(db.String, nullable = False)
+    userId = db.Column(db.String, nullable=False)
     created = db.Column(DateTime(timezone=True), server_default=func.now())
     expiration = db.Column(DateTime(timezone=True))
     expired = db.Column(db.Boolean, default=False)

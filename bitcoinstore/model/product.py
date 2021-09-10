@@ -9,9 +9,10 @@ class NonFungibleSku(db.Model):
     name: str
     description: str
 
-    sku = db.Column(db.String, primary_key = True, nullable = False)
+    sku = db.Column(db.String, primary_key=True, nullable=False)
     name = db.Column(db.String(20))
     description = db.Column(db.String(100))
+
 
 @dataclass
 class NonFungibleProduct(db.Model):
@@ -25,7 +26,9 @@ class NonFungibleProduct(db.Model):
     weight: float
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    sku = db.Column(db.String, db.ForeignKey("non_fungible_sku.sku"), nullable=False)
+    sku = db.Column(
+        db.String, db.ForeignKey("non_fungible_sku.sku"), nullable=False
+    )
     nonFungibleSku = db.relationship("NonFungibleSku")
     serial = db.Column(db.String(36), unique=True, nullable=False)
     reserved = db.Column(db.Boolean, default=False)
@@ -49,8 +52,9 @@ class NonFungibleProduct(db.Model):
             "reserved": self.reserved,
             "nfp_desc": self.nfp_desc,
             "price": self.price,
-            "weight": self.weight
+            "weight": self.weight,
         }
+
 
 @dataclass
 class FungibleProduct(db.Model):
@@ -63,8 +67,8 @@ class FungibleProduct(db.Model):
     price: int
     weight: float
 
-    id = db.Column(db.Integer, primary_key = True, autoincrement=True)
-    sku = db.Column(db.String, unique = True, nullable = False)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    sku = db.Column(db.String, unique=True, nullable=False)
     name = db.Column(db.String(20))
     description = db.Column(db.String(100))
     qty = db.Column(db.Integer, default=0)
@@ -87,5 +91,5 @@ class FungibleProduct(db.Model):
             "qty": self.qty,
             "qty_reserved": self.qty_reserved,
             "price": self.price,
-            "weight": self.weight
+            "weight": self.weight,
         }

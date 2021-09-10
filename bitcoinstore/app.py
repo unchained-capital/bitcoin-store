@@ -55,7 +55,9 @@ def create_app(settings_override=None):
 
     app.register_blueprint(page)
     app.register_blueprint(products, url_prefix="/api/products")
-    app.register_blueprint(reservations, url_prefix="/api/products/reservations")
+    app.register_blueprint(
+        reservations, url_prefix="/api/products/reservations"
+    )
 
     extensions(app)
 

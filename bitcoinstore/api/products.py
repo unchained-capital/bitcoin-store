@@ -4,7 +4,11 @@ from flask import Blueprint, jsonify, request, current_app
 from sqlalchemy.exc import IntegrityError, DBAPIError
 
 from bitcoinstore.extensions import db
-from bitcoinstore.model.product import NonFungibleProduct, FungibleProduct, NonFungibleSku
+from bitcoinstore.model.product import (
+    NonFungibleProduct,
+    FungibleProduct,
+    NonFungibleSku,
+)
 
 products = Blueprint("products", __name__, template_folder="templates")
 
@@ -17,6 +21,7 @@ def queryFungible():
 
     return query(FungibleProduct, query_params)
 
+
 # TODO pagination
 @products.get("nonfungible")
 def queryNonFungible():
@@ -24,22 +29,28 @@ def queryNonFungible():
     if request.args.get("sku"):
         query_params.append(NonFungibleProduct.sku == request.args.get("sku"))
     if request.args.get("serial"):
-        query_params.append(NonFungibleProduct.serial == request.args.get("serial"))
+        query_params.append(
+            NonFungibleProduct.serial == request.args.get("serial")
+        )
 
     return query(NonFungibleProduct, query_params)
+
 
 def query(type, query_params):
     products = db.session.query(type).filter(*query_params).all()
 
     return jsonify(serialize(products)), HTTPStatus.OK
 
+
 @products.get("fungible/<string:id>")
 def getFungible(id):
     return getProduct(FungibleProduct, id)
 
+
 @products.get("nonfungible/<string:id>")
 def getNonFungible(id):
     return getProduct(NonFungibleProduct, id)
+
 
 def getProduct(type, id):
     product = type.query.get(id)
@@ -47,6 +58,7 @@ def getProduct(type, id):
     if not product:
         return "Not found: " + type.__name__ + ".id=" + id, HTTPStatus.NOT_FOUND
     return jsonify(serialize(product)), HTTPStatus.OK
+
 
 @products.post("fungible")
 def createFungible():
@@ -58,13 +70,13 @@ def createFungible():
         return "sku is required", HTTPStatus.BAD_REQUEST
 
     product = FungibleProduct(
-        sku=args.get('sku'),
-        name=args.get('name'),
-        description=args.get('description'),
-        qty=args.get('qty'),
-        qty_reserved=args.get('qty_reserved'),
-        price=args.get('price'),
-        weight=args.get('weight'),
+        sku=args.get("sku"),
+        name=args.get("name"),
+        description=args.get("description"),
+        qty=args.get("qty"),
+        qty_reserved=args.get("qty_reserved"),
+        price=args.get("price"),
+        weight=args.get("weight"),
     )
 
     db.session.add(product)
@@ -73,6 +85,7 @@ def createFungible():
         return error
 
     return jsonify(product.serialize()), HTTPStatus.CREATED
+
 
 @products.post("nonfungible")
 def createNonFungible():
@@ -90,11 +103,11 @@ def createNonFungible():
     getOrCreateNonFungibleSku(args)
 
     product = NonFungibleProduct(
-        sku=args.get('sku'),
-        serial=args.get('serial'),
-        nfp_desc=args.get('nfp_desc'),
-        price=args.get('price'),
-        weight=args.get('weight')
+        sku=args.get("sku"),
+        serial=args.get("serial"),
+        nfp_desc=args.get("nfp_desc"),
+        price=args.get("price"),
+        weight=args.get("weight"),
     )
 
     db.session.add(product)
@@ -104,23 +117,28 @@ def createNonFungible():
 
     return jsonify(product.serialize()), HTTPStatus.CREATED
 
+
 def getOrCreateNonFungibleSku(args):
-    nfs = NonFungibleSku.query.get(args.get('sku'))
+    nfs = NonFungibleSku.query.get(args.get("sku"))
     if not nfs:
         nfs = NonFungibleSku(
-            sku=args.get('sku'),
-            name=args.get('name'),
-            description=args.get('description'),
+            sku=args.get("sku"),
+            name=args.get("name"),
+            description=args.get("description"),
         )
         db.session.add(nfs)
 
     return nfs
 
+
 @products.put("nonfungible/<string:id>")
 def updateNonFungible(id):
     product = db.session.query(NonFungibleProduct).get(id)
     if product is None:
-        return "Not found: " + NonFungibleProduct.__name__ + ".id=" + id, HTTPStatus.NOT_FOUND
+        return (
+            "Not found: " + NonFungibleProduct.__name__ + ".id=" + id,
+            HTTPStatus.NOT_FOUND,
+        )
 
     args = request.json
     if not args:
@@ -128,11 +146,11 @@ def updateNonFungible(id):
 
     getOrCreateNonFungibleSku(args)
 
-    setattr(product, 'sku', args['sku'])
-    setattr(product, 'serial', args['serial'])
-    setattr(product, 'nfp_desc', args['nfp_desc'])
-    setattr(product, 'price', args['price'])
-    setattr(product, 'weight', args['weight'])
+    setattr(product, "sku", args["sku"])
+    setattr(product, "serial", args["serial"])
+    setattr(product, "nfp_desc", args["nfp_desc"])
+    setattr(product, "price", args["price"])
+    setattr(product, "weight", args["weight"])
 
     error = commit()
     if error:
@@ -140,11 +158,15 @@ def updateNonFungible(id):
 
     return jsonify(serialize(product)), HTTPStatus.OK
 
+
 @products.put("fungible/<string:id>")
 def updateFungible(id):
     product = db.session.query(FungibleProduct).get(id)
     if product is None:
-        return "Not found: " + FungibleProduct.__name__ + ".id=" + id, HTTPStatus.NOT_FOUND
+        return (
+            "Not found: " + FungibleProduct.__name__ + ".id=" + id,
+            HTTPStatus.NOT_FOUND,
+        )
 
     args = request.json
     if not args:
@@ -152,7 +174,7 @@ def updateFungible(id):
 
     for key in FungibleProduct.__dict__.keys():
         # can't update id
-        if key == 'id':
+        if key == "id":
             continue
         if key in args:
             setattr(product, key, args[key])
@@ -163,17 +185,21 @@ def updateFungible(id):
 
     return jsonify(serialize(product)), HTTPStatus.OK
 
+
 @products.delete("fungible/<string:id>")
 def deleteFungible(id):
     return delete(FungibleProduct, id)
+
 
 @products.delete("nonfungible/<string:id>")
 def deleteNonFungible(id):
     return delete(NonFungibleProduct, id)
 
+
 @products.delete("nonfungiblesku/<string:sku>")
 def deleteNonFungibleSku(sku):
     return delete(NonFungibleSku, sku)
+
 
 def delete(type, id):
     product = type.query.get(id)
@@ -188,6 +214,7 @@ def delete(type, id):
 
     return "", HTTPStatus.NO_CONTENT
 
+
 def serialize(products):
     if isinstance(products, FungibleProduct):
         return FungibleProduct.serialize(products)
@@ -201,9 +228,12 @@ def serialize(products):
         elif isinstance(product, NonFungibleProduct):
             serialized.append(NonFungibleProduct.serialize(product))
         else:
-            raise Exception("list contains object that is not FungibleProduct or NonFungibleProduct")
+            raise Exception(
+                "list contains object that is not FungibleProduct or NonFungibleProduct"
+            )
 
     return serialized
+
 
 def commit():
     try:
