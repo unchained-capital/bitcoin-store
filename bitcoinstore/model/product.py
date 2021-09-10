@@ -4,24 +4,32 @@ from bitcoinstore.extensions import db
 
 
 @dataclass
-class NonFungibleProduct(db.Model):
-    id: int
+class NonFungibleSku(db.Model):
     sku: str
     name: str
     description: str
+
+    sku = db.Column(db.String, primary_key = True, nullable = False)
+    name = db.Column(db.String(20))
+    description = db.Column(db.String(100))
+
+@dataclass
+class NonFungibleProduct(db.Model):
+    id: int
+    sku: str
+    nonFungibleSku: NonFungibleSku
     serial: str
-    nfp_desc: str
     reserved: bool
+    nfp_desc: str
     price: int
     weight: float
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    sku = db.Column(db.String, nullable = False)
-    name = db.Column(db.String(20))
-    description = db.Column(db.String(100))
+    sku = db.Column(db.String, db.ForeignKey("non_fungible_sku.sku"), nullable=False)
+    nonFungibleSku = db.relationship("NonFungibleSku")
     serial = db.Column(db.String(36), unique=True, nullable=False)
-    nfp_desc = db.Column(db.String(100))
     reserved = db.Column(db.Boolean, default=False)
+    nfp_desc = db.Column(db.String(100))
     # denominated in pennies
     price = db.Column(db.Integer)
     # pounds? kilograms? definitely kilos if we're selling illegal fungibles
@@ -34,12 +42,12 @@ class NonFungibleProduct(db.Model):
         return {
             "non_fungible_id": self.id,
             "sku": self.sku,
-            "name": self.name,
-            "description": self.description,
+            "name": self.nonFungibleSku.name,
+            "description": self.nonFungibleSku.description,
             "fungible": False,
             "serial": self.serial,
-            "nfp_desc": self.nfp_desc,
             "reserved": self.reserved,
+            "nfp_desc": self.nfp_desc,
             "price": self.price,
             "weight": self.weight
         }

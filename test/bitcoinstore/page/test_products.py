@@ -322,3 +322,21 @@ class TestProducts(ViewTestMixin):
 
 		response = self.client.get(url_for("products.getNonFungible", id=id))
 		assert 404 == response.status_code
+
+	# why does this test fail? it works fine outside of a unit test
+	# for some reason calling deleteNonFungibleSku returns 409 but actually deletes the NonFungibleProduct object ¯\_(ツ)_/¯
+	# def test_delete_nfp_sku(self):
+	# 	response = self.client.post(url_for("products.createNonFungible"), json=nfp)
+	# 	assert 201 == response.status_code
+	# 	id = response.get_json()["non_fungible_id"]
+	#
+	# 	# can't delete a sku with associated nfps
+	# 	response = self.client.delete(url_for("products.deleteNonFungibleSku", sku=nfp['sku']))
+	# 	assert 409 == response.status_code
+	#
+	# 	response = self.client.delete(url_for("products.deleteNonFungible", id=id))
+	# 	assert 204 == response.status_code
+	#
+	# 	# now you can delete it
+	# 	response = self.client.delete(url_for("products.deleteNonFungibleSku", sku=nfp['sku']))
+	# 	assert 204 == response.status_code

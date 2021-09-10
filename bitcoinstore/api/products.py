@@ -4,8 +4,7 @@ from flask import Blueprint, jsonify, request, current_app
 from sqlalchemy.exc import IntegrityError, DBAPIError
 
 from bitcoinstore.extensions import db
-from bitcoinstore.initializers import redis
-from bitcoinstore.model.product import NonFungibleProduct, FungibleProduct
+from bitcoinstore.model.product import NonFungibleProduct, FungibleProduct, NonFungibleSku
 
 products = Blueprint("products", __name__, template_folder="templates")
 
@@ -51,16 +50,6 @@ def getProduct(type, id):
 
 @products.post("fungible")
 def createFungible():
-    return create(FungibleProduct)
-
-@products.post("nonfungible")
-def createNonFungible():
-    if request.json and "serial" not in request.json:
-        return "sku is required", HTTPStatus.BAD_REQUEST
-
-    return create(NonFungibleProduct)
-
-def create(type):
     args = request.json
     if not args:
         return "payload required", HTTPStatus.BAD_REQUEST
@@ -68,13 +57,15 @@ def create(type):
     if "sku" not in args:
         return "sku is required", HTTPStatus.BAD_REQUEST
 
-    product = type()
-    for key in type.__dict__.keys():
-        # can't set id
-        if key == 'id':
-            continue
-        if key in args:
-            setattr(product, key, args.get(key))
+    product = FungibleProduct(
+        sku=args.get('sku'),
+        name=args.get('name'),
+        description=args.get('description'),
+        qty=args.get('qty'),
+        qty_reserved=args.get('qty_reserved'),
+        price=args.get('price'),
+        weight=args.get('weight'),
+    )
 
     db.session.add(product)
     error = commit()
@@ -83,24 +74,83 @@ def create(type):
 
     return jsonify(product.serialize()), HTTPStatus.CREATED
 
-@products.put("nonfungible/<string:id>")
-def updateNonFungible(id):
-    return updateProduct(NonFungibleProduct, id)
-
-@products.put("fungible/<string:id>")
-def updateFungible(id):
-    return updateProduct(FungibleProduct, id)
-
-def updateProduct(type, id):
-    product = db.session.query(type).get(id)
-    if product is None:
-        return "Not found: " + type.__name__ + ".id=" + id, HTTPStatus.NOT_FOUND
+@products.post("nonfungible")
+def createNonFungible():
+    if request.json and "serial" not in request.json:
+        return "sku is required", HTTPStatus.BAD_REQUEST
 
     args = request.json
     if not args:
         return "payload required", HTTPStatus.BAD_REQUEST
 
-    for key in type.__dict__.keys():
+    if "sku" not in args:
+        return "sku is required", HTTPStatus.BAD_REQUEST
+
+    # create non fungible sku row if it does not exist
+    getOrCreateNonFungibleSku(args)
+
+    product = NonFungibleProduct(
+        sku=args.get('sku'),
+        serial=args.get('serial'),
+        nfp_desc=args.get('nfp_desc'),
+        price=args.get('price'),
+        weight=args.get('weight')
+    )
+
+    db.session.add(product)
+    error = commit()
+    if error:
+        return error
+
+    return jsonify(product.serialize()), HTTPStatus.CREATED
+
+def getOrCreateNonFungibleSku(args):
+    nfs = NonFungibleSku.query.get(args.get('sku'))
+    if not nfs:
+        nfs = NonFungibleSku(
+            sku=args.get('sku'),
+            name=args.get('name'),
+            description=args.get('description'),
+        )
+        db.session.add(nfs)
+
+    return nfs
+
+@products.put("nonfungible/<string:id>")
+def updateNonFungible(id):
+    product = db.session.query(NonFungibleProduct).get(id)
+    if product is None:
+        return "Not found: " + NonFungibleProduct.__name__ + ".id=" + id, HTTPStatus.NOT_FOUND
+
+    args = request.json
+    if not args:
+        return "payload required", HTTPStatus.BAD_REQUEST
+
+    getOrCreateNonFungibleSku(args)
+
+    setattr(product, 'sku', args['sku'])
+    setattr(product, 'serial', args['serial'])
+    setattr(product, 'nfp_desc', args['nfp_desc'])
+    setattr(product, 'price', args['price'])
+    setattr(product, 'weight', args['weight'])
+
+    error = commit()
+    if error:
+        return error
+
+    return jsonify(serialize(product)), HTTPStatus.OK
+
+@products.put("fungible/<string:id>")
+def updateFungible(id):
+    product = db.session.query(FungibleProduct).get(id)
+    if product is None:
+        return "Not found: " + FungibleProduct.__name__ + ".id=" + id, HTTPStatus.NOT_FOUND
+
+    args = request.json
+    if not args:
+        return "payload required", HTTPStatus.BAD_REQUEST
+
+    for key in FungibleProduct.__dict__.keys():
         # can't update id
         if key == 'id':
             continue
@@ -115,13 +165,17 @@ def updateProduct(type, id):
 
 @products.delete("fungible/<string:id>")
 def deleteFungible(id):
-    return deleteProduct(FungibleProduct, id)
+    return delete(FungibleProduct, id)
 
 @products.delete("nonfungible/<string:id>")
 def deleteNonFungible(id):
-    return deleteProduct(NonFungibleProduct, id)
+    return delete(NonFungibleProduct, id)
 
-def deleteProduct(type, id):
+@products.delete("nonfungiblesku/<string:sku>")
+def deleteNonFungibleSku(sku):
+    return delete(NonFungibleSku, sku)
+
+def delete(type, id):
     product = type.query.get(id)
 
     if not product:
