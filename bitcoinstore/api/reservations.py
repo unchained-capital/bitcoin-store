@@ -3,6 +3,7 @@ from http import HTTPStatus
 from flask import Blueprint, jsonify, request, current_app
 from sqlalchemy.exc import IntegrityError, DBAPIError
 
+import bitcoinstore
 from bitcoinstore.extensions import db
 from bitcoinstore.model.product import FungibleProduct, NonFungibleProduct
 from bitcoinstore.model.reservation import (
@@ -145,6 +146,12 @@ def create(type):
     error = commit()
     if error:
         return error
+
+    # schedule a task to expire the reservation
+    if type == FungibleReservation:
+        bitcoinstore.app.expireFungibleReservation.apply_async(countdown=reservation.duration, kwargs={'id': reservation.id})
+    elif type == NonFungibleReservation:
+        bitcoinstore.app.expireNonFungibleReservation.apply_async(countdown=reservation.duration, kwargs={'id': reservation.id})
 
     return jsonify(reservation.serialize()), HTTPStatus.CREATED
 

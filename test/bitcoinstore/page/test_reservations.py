@@ -48,19 +48,13 @@ nfp_sku2 = {
 nfp_res = {
     "serial": "madmax",
     "userId": "steve",
-    # expires tomorrow
-    "expiration": (
-        datetime.datetime.today() + datetime.timedelta(days=1)
-    ).replace(microsecond=0),
+    "duration": 10,
 }
 
 nfp_res2 = {
     "serial": "qwerty",
     "userId": "alice",
-    # expires tomorrow
-    "expiration": (
-        datetime.datetime.today() + datetime.timedelta(days=1)
-    ).replace(microsecond=0),
+    "duration": 10,
 }
 
 fp = {
@@ -89,20 +83,14 @@ fp_res = {
     "sku": "CAR",
     "qty": 1,
     "userId": "steve",
-    # expires tomorrow
-    "expiration": (
-        datetime.datetime.today() + datetime.timedelta(days=1)
-    ).replace(microsecond=0),
+    "duration": 10,
 }
 
 fp_res2 = {
     "sku": "BIKE",
     "qty": 1,
     "userId": "alice",
-    # expires tomorrow
-    "expiration": (
-        datetime.datetime.today() + datetime.timedelta(days=1)
-    ).replace(microsecond=0),
+    "duration": 10,
 }
 
 
@@ -181,10 +169,7 @@ class TestReservations(ViewTestMixin):
 
     def validateFields(self, json, reservation, expired):
         assert json["userId"] == reservation["userId"]
-        assert (
-            parse(json["expiration"]).timestamp()
-            == reservation["expiration"].timestamp()
-        )
+        assert json["duration"] == reservation["duration"]
         assert json["expired"] == expired
 
         if isinstance(reservation, FungibleReservation):
