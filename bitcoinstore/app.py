@@ -1,4 +1,5 @@
 from celery import Celery
+from flasgger import Swagger
 from flask import Flask
 from werkzeug.debug import DebuggedApplication
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -61,6 +62,8 @@ def create_app(settings_override=None):
     )
 
     extensions(app)
+
+    swagger = Swagger(app)
 
     return app
 

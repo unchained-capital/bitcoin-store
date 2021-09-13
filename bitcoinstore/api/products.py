@@ -15,6 +15,45 @@ products = Blueprint("products", __name__, template_folder="templates")
 # TODO pagination
 @products.get("fungible")
 def queryFungible():
+    """Query all fungible products
+    ---
+    parameters:
+      - in: query
+        name: sku
+        required: false
+        description: filter by sku
+        type: string
+    responses:
+      200:
+        description: a list of fungible products
+        schema:
+          id: FungibleProduct
+          properties:
+            description:
+              type: string
+            fungible_id:
+              type: integer
+              readOnly: true
+            fungible:
+              type: boolean
+              default: true
+              readOnly: true
+            name:
+              type: string
+            price:
+              type: integer
+              description: measured in pennies
+            qty:
+              type: integer
+            qty_reserved:
+              type: integer
+            sku:
+              type: string
+            weight:
+              type: number
+          required:
+            - sku
+    """
     query_params = []
     if request.args.get("sku"):
         query_params.append(FungibleProduct.sku == request.args.get("sku"))
@@ -25,6 +64,54 @@ def queryFungible():
 # TODO pagination
 @products.get("nonfungible")
 def queryNonFungible():
+    """Query all non fungible products
+    ---
+    parameters:
+      - in: query
+        name: sku
+        required: false
+        description: filter by sku
+        type: string
+      - in: query
+        name: serial
+        required: false
+        description: filter by serial
+        type: string
+    responses:
+      200:
+        description: a list of non fungible products
+        schema:
+          id: NonFungibleProduct
+          properties:
+            description:
+              type: string
+            fungible:
+              type: boolean
+              default: false
+              readOnly: true
+            name:
+              type: string
+            nfp_desc:
+              type: string
+            non_fungible_id:
+              type: integer
+              readOnly: true
+            price:
+              type: integer
+              description: measured in pennies
+            reserved:
+              type: boolean
+            serial:
+              type: string
+              description: unique identifier
+            sku:
+              type: string
+            weight:
+              type: number
+          required:
+            - sku
+            - serial
+    """
     query_params = []
     if request.args.get("sku"):
         query_params.append(NonFungibleProduct.sku == request.args.get("sku"))
@@ -44,11 +131,43 @@ def query(type, query_params):
 
 @products.get("fungible/<string:id>")
 def getFungible(id):
+    """Query fungible product by id
+    ---
+    parameters:
+      - in: path
+        name: id
+        required: true
+        description: fungible product ID
+        type: integer
+    responses:
+      200:
+        description: fungible product
+        schema:
+          $ref: '#/definitions/FungibleProduct'
+      404:
+        description: not found
+    """
     return getProduct(FungibleProduct, id)
 
 
 @products.get("nonfungible/<string:id>")
 def getNonFungible(id):
+    """Query non fungible product by id
+    ---
+    parameters:
+      - in: path
+        name: id
+        required: true
+        description: non fungible product ID
+        type: integer
+    responses:
+      200:
+        description: non fungible product
+        schema:
+          $ref: '#/definitions/NonFungibleProduct'
+      404:
+        description: not found
+    """
     return getProduct(NonFungibleProduct, id)
 
 
@@ -62,6 +181,23 @@ def getProduct(type, id):
 
 @products.post("fungible")
 def createFungible():
+    """Create fungible product
+    ---
+    parameters:
+      - in: body
+        name: fungible product
+        schema:
+          $ref: '#/definitions/FungibleProduct'
+    responses:
+      201:
+        description: created
+        schema:
+          $ref: '#/definitions/FungibleProduct'
+      409:
+        description: if sku already exists
+      400:
+        description: error e.g. integer out of range, missing payload
+    """
     args = request.json
     if not args:
         return "payload required", HTTPStatus.BAD_REQUEST
@@ -89,12 +225,29 @@ def createFungible():
 
 @products.post("nonfungible")
 def createNonFungible():
+    """Create non fungible product
+    ---
+    parameters:
+      - in: body
+        name: non fungible product
+        schema:
+          $ref: '#/definitions/NonFungibleProduct'
+    responses:
+      201:
+        description: created
+        schema:
+          $ref: '#/definitions/NonFungibleProduct'
+      400:
+        description: error e.g. integer out of range, missing payload
+      409:
+        description: if serial already exists
+    """
     args = request.json
     if not args:
         return "payload required", HTTPStatus.BAD_REQUEST
 
     if "serial" not in args:
-        return "sku is required", HTTPStatus.BAD_REQUEST
+        return "serial is required", HTTPStatus.BAD_REQUEST
 
     if "sku" not in args:
         return "sku is required", HTTPStatus.BAD_REQUEST
@@ -133,6 +286,28 @@ def getOrCreateNonFungibleSku(args):
 
 @products.put("nonfungible/<string:id>")
 def updateNonFungible(id):
+    """Update non fungible product
+    ---
+    parameters:
+      - in: path
+        name: id
+        required: true
+        description: non fungible product ID
+        type: integer
+      - in: body
+        name: non fungible product
+        schema:
+          $ref: '#/definitions/NonFungibleProduct'
+    responses:
+      200:
+        description: updated
+        schema:
+          $ref: '#/definitions/NonFungibleProduct'
+      400:
+        description: error e.g. integer out of range, missing payload
+      404:
+        description: product not found
+    """
     product = db.session.query(NonFungibleProduct).get(id)
     if product is None:
         return (
@@ -161,6 +336,28 @@ def updateNonFungible(id):
 
 @products.put("fungible/<string:id>")
 def updateFungible(id):
+    """Update fungible product
+    ---
+    parameters:
+      - in: path
+        name: id
+        required: true
+        description: fungible product ID
+        type: integer
+      - in: body
+        name: fungible product
+        schema:
+          $ref: '#/definitions/FungibleProduct'
+    responses:
+      200:
+        description: updated
+        schema:
+          $ref: '#/definitions/FungibleProduct'
+      400:
+        description: error e.g. integer out of range, missing payload
+      404:
+        description: product not found
+    """
     product = db.session.query(FungibleProduct).get(id)
     if product is None:
         return (
@@ -188,16 +385,64 @@ def updateFungible(id):
 
 @products.delete("fungible/<string:id>")
 def deleteFungible(id):
+    """Delete fungible product
+    ---
+    parameters:
+      - in: path
+        name: id
+        required: true
+        description: fungible product ID
+        type: integer
+    responses:
+      204:
+        description: deleted
+      404:
+        description: product not found
+      409:
+        description: database conflict e.g. item has outstanding reservation
+    """
     return delete(FungibleProduct, id)
 
 
 @products.delete("nonfungible/<string:id>")
 def deleteNonFungible(id):
+    """Delete non fungible product
+    ---
+    parameters:
+      - in: path
+        name: id
+        required: true
+        description: non fungible product ID
+        type: integer
+    responses:
+      204:
+        description: deleted
+      404:
+        description: product not found
+      409:
+        description: database conflict e.g. item has outstanding reservation
+    """
     return delete(NonFungibleProduct, id)
 
 
 @products.delete("nonfungiblesku/<string:sku>")
 def deleteNonFungibleSku(sku):
+    """Delete non fungible sku
+    ---
+    parameters:
+      - in: path
+        name: sku
+        required: true
+        description: non fungible product sku
+        type: string
+    responses:
+      204:
+        description: deleted
+      404:
+        description: sku not found
+      409:
+        description: database conflict e.g. item has outstanding reservation
+    """
     return delete(NonFungibleSku, sku)
 
 
