@@ -1,12 +1,20 @@
 from celery import Celery
+from flasgger import Swagger
 from flask import Flask
 from werkzeug.debug import DebuggedApplication
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from bitcoinstore.page.views import page
+from bitcoinstore.api.products import products
+from bitcoinstore.api.reservations import reservations
 from bitcoinstore.extensions import db
 from bitcoinstore.extensions import debug_toolbar
 from bitcoinstore.extensions import flask_static_digest
+from bitcoinstore.model.reservation import (
+    FungibleReservation,
+    NonFungibleReservation,
+)
+from bitcoinstore.page.views import page
+from bitcoinstore.tasks import expire_reservation
 
 
 def create_celery_app(app=None):
@@ -43,7 +51,6 @@ def create_app(settings_override=None):
     :return: Flask app
     """
     app = Flask(__name__, static_folder="../public", static_url_path="")
-
     app.config.from_object("config.settings")
 
     if settings_override:
@@ -52,8 +59,14 @@ def create_app(settings_override=None):
     middleware(app)
 
     app.register_blueprint(page)
+    app.register_blueprint(products, url_prefix="/api/products")
+    app.register_blueprint(
+        reservations, url_prefix="/api/products/reservations"
+    )
 
     extensions(app)
+
+    Swagger(app)
 
     return app
 
@@ -90,3 +103,13 @@ def middleware(app):
 
 
 celery_app = create_celery_app()
+
+
+@celery_app.task
+def expireFungibleReservation(id):
+    expire_reservation.expire(id, FungibleReservation)
+
+
+@celery_app.task
+def expireNonFungibleReservation(id):
+    expire_reservation.expire(id, NonFungibleReservation)

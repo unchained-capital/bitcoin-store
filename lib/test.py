@@ -1,7 +1,9 @@
+import unittest
+
 import pytest
 
 
-class ViewTestMixin(object):
+class ViewTestMixin(unittest.TestCase):
     """
     Automatically load in a session and client, this is common for a lot of
     tests that work with views.
