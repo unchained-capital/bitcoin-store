@@ -12,6 +12,7 @@ from bitcoinstore.model.product import (
 
 products = Blueprint("products", __name__, template_folder="templates")
 
+
 # TODO pagination
 @products.get("fungible")
 def queryFungible():
@@ -49,6 +50,7 @@ def queryFungible():
               type: integer
             sku:
               type: string
+              description: cannot be updated
             weight:
               type: number
           required:
@@ -85,12 +87,14 @@ def queryNonFungible():
           properties:
             description:
               type: string
+              description: cannot be updated
             fungible:
               type: boolean
               default: false
               readOnly: true
             name:
               type: string
+              description: cannot be updated
             nfp_desc:
               type: string
             non_fungible_id:
@@ -103,7 +107,7 @@ def queryNonFungible():
               type: boolean
             serial:
               type: string
-              description: unique identifier
+              description: unique identifier, cannot be updated
             sku:
               type: string
             weight:

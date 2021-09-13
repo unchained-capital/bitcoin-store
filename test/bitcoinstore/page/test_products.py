@@ -108,7 +108,7 @@ class TestProducts(ViewTestMixin):
             json=dict((key, nfp[key]) for key in nfp if key != "serial"),
         )
         assert 400 == response.status_code
-        assert "sku" in str(response.data)
+        assert "serial" in str(response.data)
 
     def test_create_fp_missing_required_fields(self):
         # nonfungible w/o sku
@@ -409,7 +409,8 @@ class TestProducts(ViewTestMixin):
         assert 404 == response.status_code
 
     # why does this test fail? it works fine outside of a unit test
-    # for some reason calling deleteNonFungibleSku returns 409 but actually deletes the NonFungibleProduct object ¯\_(ツ)_/¯
+    # for some reason calling deleteNonFungibleSku returns 409 but actually
+    # deletes the NonFungibleProduct object ¯\_(ツ)_/¯
     # def test_delete_nfp_sku(self):
     # 	response = self.client.post(url_for("products.createNonFungible"), json=nfp)
     # 	assert 201 == response.status_code

@@ -2,7 +2,10 @@ from flask import current_app
 from sqlalchemy.exc import DatabaseError
 
 from bitcoinstore.extensions import db
-from bitcoinstore.model.reservation import FungibleReservation, NonFungibleReservation
+from bitcoinstore.model.reservation import (
+    FungibleReservation,
+    NonFungibleReservation,
+)
 
 
 def expire(id, type):
@@ -12,7 +15,12 @@ def expire(id, type):
     reservation = type.query.get(id)
 
     if not reservation:
-        current_app.logger.error("Error expiring reservation: NOT FOUND " + type.__name__ + ".id=" + str(id))
+        current_app.logger.error(
+            "Error expiring reservation: NOT FOUND "
+            + type.__name__
+            + ".id="
+            + str(id)
+        )
 
     # if reservation is not expired do work, else do nothing
     if not reservation.expired:

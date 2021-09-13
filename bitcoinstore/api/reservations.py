@@ -13,6 +13,7 @@ from bitcoinstore.model.reservation import (
 
 reservations = Blueprint("reservations", __name__, template_folder="templates")
 
+
 # TODO pagination
 @reservations.get("fungible")
 def queryFungible():
@@ -294,6 +295,7 @@ def createNonFungible():
         nfp.reserved = True
         return create(NonFungibleReservation)
 
+
 def validateSharedRequirements(json):
     if not request.json:
         return "payload required", HTTPStatus.BAD_REQUEST
@@ -323,9 +325,13 @@ def create(type):
 
     # schedule a task to expire the reservation
     if type == FungibleReservation:
-        bitcoinstore.app.expireFungibleReservation.apply_async(countdown=reservation.duration, kwargs={'id': reservation.id})
+        bitcoinstore.app.expireFungibleReservation.apply_async(
+            countdown=reservation.duration, kwargs={"id": reservation.id}
+        )
     elif type == NonFungibleReservation:
-        bitcoinstore.app.expireNonFungibleReservation.apply_async(countdown=reservation.duration, kwargs={'id': reservation.id})
+        bitcoinstore.app.expireNonFungibleReservation.apply_async(
+            countdown=reservation.duration, kwargs={"id": reservation.id}
+        )
 
     return jsonify(reservation.serialize()), HTTPStatus.CREATED
 

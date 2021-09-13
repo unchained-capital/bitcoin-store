@@ -9,7 +9,10 @@ from bitcoinstore.api.reservations import reservations
 from bitcoinstore.extensions import db
 from bitcoinstore.extensions import debug_toolbar
 from bitcoinstore.extensions import flask_static_digest
-from bitcoinstore.model.reservation import FungibleReservation, NonFungibleReservation
+from bitcoinstore.model.reservation import (
+    FungibleReservation,
+    NonFungibleReservation,
+)
 from bitcoinstore.page.views import page
 from bitcoinstore.tasks import expire_reservation
 
@@ -63,7 +66,7 @@ def create_app(settings_override=None):
 
     extensions(app)
 
-    swagger = Swagger(app)
+    Swagger(app)
 
     return app
 
@@ -101,9 +104,11 @@ def middleware(app):
 
 celery_app = create_celery_app()
 
+
 @celery_app.task
 def expireFungibleReservation(id):
     expire_reservation.expire(id, FungibleReservation)
+
 
 @celery_app.task
 def expireNonFungibleReservation(id):

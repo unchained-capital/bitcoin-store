@@ -1,6 +1,3 @@
-import datetime
-
-from dateutil.parser import parse
 from flask import url_for
 
 from bitcoinstore.extensions import db
@@ -372,7 +369,7 @@ class TestReservations(ViewTestMixin):
             url_for("products.queryNonFungible") + "?serial=" + nfp["serial"]
         )
         assert 200 == response.status_code
-        assert False == response.json[0]["reserved"]
+        assert response.json[0]["reserved"] is False
 
     def test_expire_fp_res(self):
         response = self.client.post(
