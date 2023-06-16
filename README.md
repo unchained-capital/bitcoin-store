@@ -1,3 +1,5 @@
+![Unchained](https://global-uploads.webflow.com/64146a6197229d65fe665d88/643dea1a51269187a60c2753_Full-Logo%E2%80%94Dark%20%E2%80%94%20No%20Border.svg)
+
 # A Backend for a Bitcoin store
 
 This project aims to eventually become a bitcoin based store api,
